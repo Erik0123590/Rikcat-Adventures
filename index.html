@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Mini Mario Mobile</title>
+
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: #5c94fc;
+    font-family: sans-serif;
+  }
+
+  canvas {
+    display: block;
+    background: linear-gradient(#5c94fc, #9ee7ff);
+  }
+
+  .controls {
+    position: fixed;
+    bottom: 10px;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+  }
+
+  .btn {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    font-size: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+  }
+</style>
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<div class="controls">
+  <div class="btn" id="left">⬅️</div>
+  <div class="btn" id="jump">⬆️</div>
+  <div class="btn" id="right">➡️</div>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const gravity = 0.6;
+
+// Jogador
+const player = {
+  x: 50,
+  y: 100,
+  width: 40,
+  height: 50,
+  dx: 0,
+  dy: 0,
+  speed: 4,
+  jump: -12,
+  onGround: false
+};
+
+// Plataformas
+const platforms = [
+  { x: 0, y: canvas.height - 40, width: canvas.width, height: 40 },
+  { x: 150, y: canvas.height - 120, width: 120, height: 20 },
+  { x: 320, y: canvas.height - 200, width: 120, height: 20 },
+  { x: 500, y: canvas.height - 160, width: 120, height: 20 }
+];
+
+// Controles
+let keys = { left: false, right: false, jump: false };
+
+document.getElementById("left").ontouchstart = () => keys.left = true;
+document.getElementById("left").ontouchend = () => keys.left = false;
+
+document.getElementById("right").ontouchstart = () => keys.right = true;
+document.getElementById("right").ontouchend = () => keys.right = false;
+
+document.getElementById("jump").ontouchstart = () => {
+  if (player.onGround) {
+    player.dy = player.jump;
+    player.onGround = false;
+  }
+};
+
+// Atualização
+function update() {
+  // Movimento
+  player.dx = 0;
+  if (keys.left) player.dx = -player.speed;
+  if (keys.right) player.dx = player.speed;
+
+  player.x += player.dx;
+  player.dy += gravity;
+  player.y += player.dy;
+
+  player.onGround = false;
+
+  // Colisão com plataformas
+  platforms.forEach(p => {
+    if (
+      player.x < p.x + p.width &&
+      player.x + player.width > p.x &&
+      player.y < p.y + p.height &&
+      player.y + player.height > p.y
+    ) {
+      if (player.dy > 0) {
+        player.y = p.y - player.height;
+        player.dy = 0;
+        player.onGround = true;
+      }
+    }
+  });
+
+  // Limites da tela
+  if (player.x < 0) player.x = 0;
+  if (player.x + player.width > canvas.width)
+    player.x = canvas.width - player.width;
+
+  if (player.y > canvas.height) {
+    player.x = 50;
+    player.y = 100;
+    player.dy = 0;
+  }
+}
+
+// Desenho
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Jogador (tipo Mario)
+  ctx.fillStyle = "red";
+  ctx.fillRect(player.x, player.y, player.width, player.height);
+
+  // Plataformas
+  ctx.fillStyle = "#654321";
+  platforms.forEach(p => {
+    ctx.fillRect(p.x, p.y, p.width, p.height);
+  });
+}
+
+// Loop
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+
+</body>
+</html>
