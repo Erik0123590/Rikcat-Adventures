@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Rikcat Adventure</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  overflow: hidden;
+  touch-action: none;
+}
+
+canvas {
+  display: block;
+  background: #6fa8ff;
+}
+
+/* AVISO DE ROTACAO */
+#rotate-warning {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  color: #fff;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  z-index: 9999;
+  font-family: sans-serif;
+}
+
+@media (orientation: portrait) {
+  #rotate-warning { display: flex; }
+  canvas { display: none; }
+}
+
+@media (orientation: landscape) {
+  #rotate-warning { display: none; }
+  canvas { display: block; }
+}
+
+/* BOTÕES */
+.btn {
+  position: fixed;
+  bottom: 20px;
+  width: 80px;
+  height: 80px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 50%;
+  z-index: 10;
+}
+#left { left: 20px; }
+#right { left: 120px; }
+#jump { right: 20px; }
+</style>
+</head>
+
+<body>
+
+<div id="rotate-warning">
+  <div>
+    <h1>📱 Vire o celular</h1>
+    <p>Jogue na horizontal</p>
+  </div>
+</div>
+
+<canvas id="game"></canvas>
+
+<div id="left" class="btn"></div>
+<div id="right" class="btn"></div>
+<div id="jump" class="btn"></div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+function resize(){
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
+/* MAPA */
+const groundHeight = 80;
+
+/* PLAYER */
+const player = {
+  x: 100,
+  y: 0,
+  w: 60,
+  h: 60,
+  vx: 0,
+  vy: 0,
+  onGround: false
+};
+
+/* CONTROLES */
+let left=false, right=false;
+
+document.getElementById("left").ontouchstart = ()=>left=true;
+document.getElementById("left").ontouchend = ()=>left=false;
+
+document.getElementById("right").ontouchstart = ()=>right=true;
+document.getElementById("right").ontouchend = ()=>right=false;
+
+document.getElementById("jump").ontouchstart = ()=>{
+  if(player.onGround){
+    player.vy = -18;
+    player.onGround = false;
+  }
+};
+
+/* DESENHO DO RIKCAT */
+function drawRikcat(p){
+  const cx = p.x + p.w/2;
+  const cy = p.y + p.h/2;
+
+  ctx.fillStyle = "#FFA500";
+  ctx.beginPath();
+  ctx.arc(cx, cy, p.w/2, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 5;
+  ctx.stroke();
+
+  ctx.fillStyle = "#000";
+  ctx.fillRect(cx-10, cy-5, 5, 10);
+  ctx.fillRect(cx+5, cy-5, 5, 10);
+}
+
+/* GAME LOOP */
+function update(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  /* MOVIMENTO */
+  if(left) player.vx = -6;
+  else if(right) player.vx = 6;
+  else player.vx = 0;
+
+  player.x += player.vx;
+
+  /* GRAVIDADE */
+  player.vy += 1;
+  player.y += player.vy;
+
+  /* COLISÃO COM CHÃO */
+  if(player.y + player.h > canvas.height - groundHeight){
+    player.y = canvas.height - groundHeight - player.h;
+    player.vy = 0;
+    player.onGround = true;
+  }
+
+  /* MAPA */
+  ctx.fillStyle = "#6b3e26";
+  ctx.fillRect(0, canvas.height-groundHeight, canvas.width, groundHeight);
+
+  drawRikcat(player);
+
+  requestAnimationFrame(update);
+}
+update();
+</script>
+
+</body>
+</html>
