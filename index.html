@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Rikcat Adventure</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: black;
+  overflow: hidden;
+  touch-action: none;
+}
+
+canvas {
+  display: block;
+  background: #6aa9ff;
+}
+
+/* CONTROLES */
+.controls {
+  position: fixed;
+  bottom: 10px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+.group {
+  display: flex;
+  gap: 15px;
+  padding: 0 15px;
+}
+
+button {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.35);
+  color: white;
+  font-size: 26px;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<div class="controls">
+  <div class="group">
+    <button id="left">◀</button>
+    <button id="right">▶</button>
+  </div>
+  <div class="group">
+    <button id="jump">⬆</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+function resize(){
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+}
+resize();
+addEventListener("resize", resize);
+
+/* FORÇA PAISAGEM (quando possível) */
+if (screen.orientation?.lock) {
+  screen.orientation.lock("landscape").catch(()=>{});
+}
+
+/* FÍSICA */
+const gravity = 0.8;
+
+/* RIKCAT */
+const rikcat = {
+  x: 100,
+  y: 100,
+  w: 44,
+  h: 60,
+  vx: 0,
+  vy: 0,
+  onGround: false
+};
+
+/* PLATAFORMAS */
+const platforms = [
+  { x: 0, y: () => canvas.height - 70, w: () => canvas.width, h: 70 }, // chão
+  { x: 300, y: () => canvas.height - 160, w: 180, h: 20 }              // plataforma
+];
+
+/* DESENHO DO MAPA */
+function drawPlatforms(){
+  ctx.fillStyle = "#2ecc71";
+  platforms.forEach(p=>{
+    const px = p.x;
+    const py = typeof p.y === "function" ? p.y() : p.y;
+    const pw = typeof p.w === "function" ? p.w() : p.w;
+    const ph = p.h;
+    ctx.fillRect(px, py, pw, ph);
+  });
+}
+
+/* DESENHO DO RIKCAT */
+function drawRikcat(){
+  const x = rikcat.x;
+  const y = rikcat.y;
+
+  /* corpo */
+  ctx.fillStyle = "#FFA500";
+  ctx.fillRect(x+8, y+30, 28, 30);
+
+  /* cabeça */
+  ctx.beginPath();
+  ctx.arc(x+22, y+20, 20, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = "black";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  /* orelhas */
+  ctx.beginPath();
+  ctx.moveTo(x+6, y+10);
+  ctx.lineTo(x+12, y-10);
+  ctx.lineTo(x+18, y+10);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x+26, y+10);
+  ctx.lineTo(x+32, y-10);
+  ctx.lineTo(x+38, y+10);
+  ctx.fill();
+  ctx.stroke();
+
+  /* olhos */
+  ctx.beginPath();
+  ctx.moveTo(x+16, y+18);
+  ctx.lineTo(x+16, y+26);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x+28, y+18);
+  ctx.lineTo(x+28, y+26);
+  ctx.stroke();
+
+  /* nariz */
+  ctx.fillStyle = "pink";
+  ctx.beginPath();
+  ctx.moveTo(x+22, y+28);
+  ctx.lineTo(x+18, y+34);
+  ctx.lineTo(x+26, y+34);
+  ctx.fill();
+}
+
+/* COLISÃO */
+function checkPlatforms(){
+  rikcat.onGround = false;
+
+  platforms.forEach(p=>{
+    const px = p.x;
+    const py = typeof p.y === "function" ? p.y() : p.y;
+    const pw = typeof p.w === "function" ? p.w() : p.w;
+    const ph = p.h;
+
+    if (
+      rikcat.x < px + pw &&
+      rikcat.x + rikcat.w > px &&
+      rikcat.y + rikcat.h <= py + 10 &&
+      rikcat.y + rikcat.h + rikcat.vy >= py
+    ){
+      rikcat.y = py - rikcat.h;
+      rikcat.vy = 0;
+      rikcat.onGround = true;
+    }
+  });
+}
+
+/* GAME LOOP */
+function update(){
+  rikcat.vy += gravity;
+  rikcat.x += rikcat.vx;
+  rikcat.y += rikcat.vy;
+
+  checkPlatforms();
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawPlatforms();
+  drawRikcat();
+}
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+
+/* CONTROLES */
+left.ontouchstart = ()=>rikcat.vx = -4;
+right.ontouchstart = ()=>rikcat.vx = 4;
+left.ontouchend = right.ontouchend = ()=>rikcat.vx = 0;
+
+jump.ontouchstart = ()=>{
+  if(rikcat.onGround){
+    rikcat.vy = -14;
+    rikcat.onGround = false;
+  }
+};
+</script>
+
+</body>
+</html>
