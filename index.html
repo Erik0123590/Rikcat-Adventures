@@ -2,165 +2,211 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Mini Mario Mobile</title>
+<title>Rikcat Adventures</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-  body {
-    margin: 0;
-    overflow: hidden;
-    background: #5c94fc;
-    font-family: sans-serif;
-  }
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #6da7ff;
+  font-family: Arial, sans-serif;
+}
 
-  canvas {
-    display: block;
-    background: linear-gradient(#5c94fc, #9ee7ff);
-  }
+canvas {
+  display: block;
+}
 
-  .controls {
-    position: fixed;
-    bottom: 10px;
-    width: 100%;
-    display: flex;
-    justify-content: space-around;
-  }
+/* Tela de título */
+#titleScreen {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(#6da7ff, #a3c9ff);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
 
-  .btn {
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    background: rgba(0,0,0,0.5);
-    color: white;
-    font-size: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    user-select: none;
-  }
+#titleScreen h1 {
+  font-size: 40px;
+  margin-bottom: 20px;
+}
+
+#startBtn {
+  font-size: 20px;
+  padding: 12px 30px;
+  border: none;
+  border-radius: 12px;
+  background: #ffb703;
+}
+
+/* Botões mobile */
+.touch {
+  position: fixed;
+  bottom: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.35);
+}
+
+#left { left: 20px; }
+#right { left: 100px; }
+#jump { right: 20px; }
 </style>
 </head>
 
 <body>
 
+<div id="titleScreen">
+  <h1>🐱 Rikcat Adventures</h1>
+  <button id="startBtn">JOGAR</button>
+</div>
+
 <canvas id="game"></canvas>
 
-<div class="controls">
-  <div class="btn" id="left">⬅️</div>
-  <div class="btn" id="jump">⬆️</div>
-  <div class="btn" id="right">➡️</div>
-</div>
+<div id="left" class="touch"></div>
+<div id="right" class="touch"></div>
+<div id="jump" class="touch"></div>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+function resize(){
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+}
+resize();
+addEventListener("resize", resize);
 
-const gravity = 0.6;
+// CONTROLES
+let keys = {};
 
-// Jogador
+// teclado
+addEventListener("keydown", e => keys[e.code] = true);
+addEventListener("keyup", e => keys[e.code] = false);
+
+// toque
+function touch(id, code){
+  const el = document.getElementById(id);
+  el.addEventListener("touchstart", e => {
+    e.preventDefault();
+    keys[code] = true;
+  });
+  el.addEventListener("touchend", e => {
+    e.preventDefault();
+    keys[code] = false;
+  });
+}
+touch("left", "ArrowLeft");
+touch("right", "ArrowRight");
+touch("jump", "Space");
+
+// PLAYER
 const player = {
-  x: 50,
-  y: 100,
-  width: 40,
-  height: 50,
-  dx: 0,
-  dy: 0,
-  speed: 4,
-  jump: -12,
+  x: 80,
+  y: 0,
+  w: 50,
+  h: 50,
+  vx: 0,
+  vy: 0,
   onGround: false
 };
 
-// Plataformas
+// MAPA (plataformas)
 const platforms = [
-  { x: 0, y: canvas.height - 40, width: canvas.width, height: 40 },
-  { x: 150, y: canvas.height - 120, width: 120, height: 20 },
-  { x: 320, y: canvas.height - 200, width: 120, height: 20 },
-  { x: 500, y: canvas.height - 160, width: 120, height: 20 }
+  {x:0, y:innerHeight-60, w:5000, h:60},
+  {x:300, y:innerHeight-160, w:200, h:20},
+  {x:650, y:innerHeight-240, w:200, h:20}
 ];
 
-// Controles
-let keys = { left: false, right: false, jump: false };
+// DESENHAR RIKCAT
+function drawRikcat(x,y,w,h){
+  const cx = x + w/2;
+  const cy = y + h/2;
 
-document.getElementById("left").ontouchstart = () => keys.left = true;
-document.getElementById("left").ontouchend = () => keys.left = false;
+  ctx.fillStyle = "#FFA500";
+  ctx.beginPath();
+  ctx.arc(cx, cy, w/2, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = "black";
+  ctx.lineWidth = 5;
+  ctx.stroke();
 
-document.getElementById("right").ontouchstart = () => keys.right = true;
-document.getElementById("right").ontouchend = () => keys.right = false;
+  ctx.beginPath();
+  ctx.moveTo(x-5,y+10);
+  ctx.lineTo(x+10,y-15);
+  ctx.lineTo(x+25,y+10);
+  ctx.fill();
+  ctx.stroke();
 
-document.getElementById("jump").ontouchstart = () => {
-  if (player.onGround) {
-    player.dy = player.jump;
+  ctx.beginPath();
+  ctx.moveTo(x+w-25,y+10);
+  ctx.lineTo(x+w-10,y-15);
+  ctx.lineTo(x+w+5,y+10);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.strokeStyle = "black";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(cx-10,cy-5);
+  ctx.lineTo(cx-10,cy+10);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx+10,cy-5);
+  ctx.lineTo(cx+10,cy+10);
+  ctx.stroke();
+}
+
+// FÍSICA
+function update(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // movimento
+  if(keys.ArrowLeft) player.vx = -5;
+  else if(keys.ArrowRight) player.vx = 5;
+  else player.vx *= 0.8;
+
+  if(keys.Space && player.onGround){
+    player.vy = -18;
     player.onGround = false;
   }
-};
 
-// Atualização
-function update() {
-  // Movimento
-  player.dx = 0;
-  if (keys.left) player.dx = -player.speed;
-  if (keys.right) player.dx = player.speed;
+  player.vy += 0.9;
 
-  player.x += player.dx;
-  player.dy += gravity;
-  player.y += player.dy;
+  player.x += player.vx;
+  player.y += player.vy;
 
+  // colisão
   player.onGround = false;
+  platforms.forEach(p=>{
+    ctx.fillStyle="#8B4513";
+    ctx.fillRect(p.x,p.y,p.w,p.h);
 
-  // Colisão com plataformas
-  platforms.forEach(p => {
-    if (
-      player.x < p.x + p.width &&
-      player.x + player.width > p.x &&
-      player.y < p.y + p.height &&
-      player.y + player.height > p.y
-    ) {
-      if (player.dy > 0) {
-        player.y = p.y - player.height;
-        player.dy = 0;
-        player.onGround = true;
-      }
+    if(player.x < p.x+p.w &&
+       player.x+player.w > p.x &&
+       player.y+player.h < p.y+20 &&
+       player.y+player.h+player.vy >= p.y){
+      player.y = p.y-player.h;
+      player.vy = 0;
+      player.onGround = true;
     }
   });
 
-  // Limites da tela
-  if (player.x < 0) player.x = 0;
-  if (player.x + player.width > canvas.width)
-    player.x = canvas.width - player.width;
-
-  if (player.y > canvas.height) {
-    player.x = 50;
-    player.y = 100;
-    player.dy = 0;
-  }
+  drawRikcat(player.x, player.y, player.w, player.h);
+  requestAnimationFrame(update);
 }
 
-// Desenho
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Jogador (tipo Mario)
-  ctx.fillStyle = "red";
-  ctx.fillRect(player.x, player.y, player.width, player.height);
-
-  // Plataformas
-  ctx.fillStyle = "#654321";
-  platforms.forEach(p => {
-    ctx.fillRect(p.x, p.y, p.width, p.height);
-  });
-}
-
-// Loop
-function loop() {
+// START
+document.getElementById("startBtn").onclick = ()=>{
+  document.getElementById("titleScreen").style.display="none";
   update();
-  draw();
-  requestAnimationFrame(loop);
-}
-
-loop();
+};
 </script>
 
 </body>
