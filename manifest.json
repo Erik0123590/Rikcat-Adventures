@@ -1,0 +1,21 @@
+{
+  "name": "Rikcat Adventure",
+  "short_name": "Rikcat",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#5c94fc",
+  "theme_color": "#ff9f00",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
