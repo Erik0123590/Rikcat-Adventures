@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Rikcat Adventure</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: black;
+  overflow: hidden;
+  touch-action: none;
+}
+
+canvas {
+  background: #6aa9ff;
+  display: block;
+}
+
+/* CONTROLES */
+.controls {
+  position: fixed;
+  bottom: 10px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+.group {
+  display: flex;
+  gap: 15px;
+  padding: 0 15px;
+}
+
+button {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.3);
+  color: white;
+  font-size: 28px;
+  font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<div class="controls">
+  <div class="group">
+    <button id="left">◀</button>
+    <button id="right">▶</button>
+  </div>
+  <div class="group">
+    <button id="jump">⬆</button>
+    <button id="attack">✖</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+function resize(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+// FORÇA PAISAGEM
+if (screen.orientation && screen.orientation.lock) {
+  screen.orientation.lock("landscape").catch(()=>{});
+}
+
+// MAPA
+const groundY = () => canvas.height - 80;
+
+// RIKCAT
+const rikcat = {
+  x: 100,
+  y: 0,
+  w: 50,
+  h: 50,
+  vx: 0,
+  vy: 0,
+  onGround: false
+};
+
+const gravity = 0.7;
+
+function drawMap(){
+  // chão
+  ctx.fillStyle = "#2ecc71";
+  ctx.fillRect(0, groundY(), canvas.width, 80);
+
+  // plataforma
+  ctx.fillStyle = "#27ae60";
+  ctx.fillRect(300, groundY()-80, 160, 20);
+}
+
+function drawRikcat(){
+  const cx = rikcat.x + rikcat.w/2;
+  const cy = rikcat.y + rikcat.h/2;
+
+  ctx.fillStyle = "orange";
+  ctx.beginPath();
+  ctx.arc(cx, cy, 25, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.strokeStyle = "black";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // orelhas
+  ctx.beginPath();
+  ctx.moveTo(rikcat.x+8, rikcat.y+10);
+  ctx.lineTo(rikcat.x+18, rikcat.y-15);
+  ctx.lineTo(rikcat.x+28, rikcat.y+10);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(rikcat.x+rikcat.w-28, rikcat.y+10);
+  ctx.lineTo(rikcat.x+rikcat.w-18, rikcat.y-15);
+  ctx.lineTo(rikcat.x+rikcat.w-8, rikcat.y+10);
+  ctx.fill();
+  ctx.stroke();
+
+  // olhos
+  ctx.beginPath();
+  ctx.moveTo(cx-10, cy-5);
+  ctx.lineTo(cx-10, cy+8);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(cx+10, cy-5);
+  ctx.lineTo(cx+10, cy+8);
+  ctx.stroke();
+
+  // nariz
+  ctx.fillStyle = "pink";
+  ctx.beginPath();
+  ctx.moveTo(cx, cy+6);
+  ctx.lineTo(cx-6, cy+14);
+  ctx.lineTo(cx+6, cy+14);
+  ctx.fill();
+}
+
+function update(){
+  rikcat.vy += gravity;
+  rikcat.x += rikcat.vx;
+  rikcat.y += rikcat.vy;
+
+  // chão
+  if(rikcat.y + rikcat.h > groundY()){
+    rikcat.y = groundY() - rikcat.h;
+    rikcat.vy = 0;
+    rikcat.onGround = true;
+  }
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawMap();
+  drawRikcat();
+}
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+
+// CONTROLES
+left.ontouchstart = ()=>rikcat.vx = -4;
+right.ontouchstart = ()=>rikcat.vx = 4;
+left.ontouchend = right.ontouchend = ()=>rikcat.vx = 0;
+
+jump.ontouchstart = ()=>{
+  if(rikcat.onGround){
+    rikcat.vy = -14;
+    rikcat.onGround = false;
+  }
+};
+</script>
+
+</body>
+</html>
