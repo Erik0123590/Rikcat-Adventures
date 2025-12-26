@@ -45,10 +45,9 @@ function startGame(isMulti){
   gameStarted = true;
   playing = true;
 
-  /* Botões do EduKat */
-  left2.style.display  =
+  left2.style.display =
   right2.style.display =
-  jump2.style.display  = multiplayer ? "block" : "none";
+  jump2.style.display = multiplayer ? "block" : "none";
 }
 
 soloBtn.onclick  = ()=>startGame(false);
