@@ -49,15 +49,10 @@ body{
   z-index:20;
 }
 
-#game{
-  display:none;
-}
+#game{display:none;}
 
-canvas{
-  display:block;
-}
+canvas{display:block;}
 
-/* BOTÕES */
 .btn{
   position:fixed;
   width:70px;
@@ -85,7 +80,8 @@ canvas{
 <div id="titleScreen">
   <h1>🐱 Rikcat Adventure</h1>
   <button id="soloBtn">Jogar Sozinho</button>
-  <button id="multiBtn">Multiplayer</button>
+  <button id="multiBtn">Multiplayer Local</button>
+  <button disabled>🌐 Online (em breve)</button>
 </div>
 
 <div id="rotate">Vire o celular</div>
@@ -93,19 +89,19 @@ canvas{
 <div id="game">
   <canvas id="canvas"></canvas>
 
-  <!-- P1 -->
   <div id="left" class="btn"></div>
   <div id="right" class="btn"></div>
   <div id="jump" class="btn"></div>
   <div id="attack" class="btn"></div>
 
-  <!-- P2 -->
   <div id="left2" class="btn"></div>
   <div id="right2" class="btn"></div>
   <div id="jump2" class="btn"></div>
   <div id="attack2" class="btn"></div>
 </div>
 
+<script src="enemies.js"></script>
+<script src="firebase.js"></script>
 <script src="game.js"></script>
 </body>
 </html>
