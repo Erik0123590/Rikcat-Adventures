@@ -95,6 +95,13 @@ const platforms = [
   {x:900, y:()=>canvas.height-320, w:140, h:20},
 ];
 
+/* INIMIGOS */
+const enemies = [
+  { x:400, y:0, w:26, h:26, vx:1.2, alive:true },
+  { x:700, y:0, w:26, h:26, vx:-1.2, alive:true },
+  { x:1000,y:0, w:26, h:26, vx:1.5, alive:true }
+];
+
 /* UPDATE */
 function update(){
   requestAnimationFrame(update);
@@ -106,6 +113,33 @@ function update(){
   ctx.fillStyle="#8B4513";
   platforms.forEach(p=>{
     ctx.fillRect(p.x,p.y(),p.w,p.h);
+  });
+
+  /* INIMIGOS */
+  enemies.forEach(e=>{
+    if(!e.alive) return;
+
+    e.x += e.vx;
+    e.y += 4; // gravidade simples
+
+    platforms.forEach(pl=>{
+      const py = pl.y();
+      if(
+        e.x < pl.x+pl.w &&
+        e.x+e.w > pl.x &&
+        e.y < py+pl.h &&
+        e.y+e.h > py
+      ){
+        e.y = py - e.h;
+      }
+    });
+
+    if(e.x < 0 || e.x+e.w > 3000){
+      e.vx *= -1;
+    }
+
+    ctx.fillStyle="red";
+    ctx.fillRect(e.x,e.y,e.w,e.h);
   });
 
   /* PLAYERS */
@@ -141,6 +175,28 @@ function update(){
       }
     });
 
+    /* COLISÃO COM INIMIGOS */
+    enemies.forEach(e=>{
+      if(!e.alive) return;
+
+      if(
+        p.x < e.x+e.w &&
+        p.x+p.w > e.x &&
+        p.y < e.y+e.h &&
+        p.y+p.h > e.y
+      ){
+        if(p.vy > 0 && p.y+p.h-e.y < 15){
+          e.alive=false;
+          p.vy=-8;
+        }else{
+          p.x = 80 + i*60;
+          p.y = 0;
+          p.vy = 0;
+        }
+      }
+    });
+
+    /* DESENHO DO PLAYER */
     ctx.fillStyle=p.color;
     ctx.beginPath();
     ctx.arc(p.x+p.w/2,p.y+p.h/2,p.w/2,0,Math.PI*2);
@@ -152,4 +208,5 @@ function update(){
     ctx.fillText(p.name,p.x+p.w/2,p.y-5);
   });
 }
+
 update();
