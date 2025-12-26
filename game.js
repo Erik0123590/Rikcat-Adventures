@@ -7,129 +7,171 @@ const multiBtn = document.getElementById("multiBtn");
 const gameDiv = document.getElementById("game");
 const rotate = document.getElementById("rotate");
 
-const buttons = id=>document.getElementById(id);
+/* BOTÕES */
+const left  = document.getElementById("left");
+const right = document.getElementById("right");
+const jump  = document.getElementById("jump");
 
-const controls = [
-  {left:buttons("left"),right:buttons("right"),jump:buttons("jump"),attack:buttons("attack")},
-  {left:buttons("left2"),right:buttons("right2"),jump:buttons("jump2"),attack:buttons("attack2")}
-];
+const left2  = document.getElementById("left2");
+const right2 = document.getElementById("right2");
+const jump2  = document.getElementById("jump2");
 
-let multiplayer=false, playing=false;
+/* ESCONDE P2 NO INÍCIO (CORREÇÃO DO SOLO) */
+left2.style.display =
+right2.style.display =
+jump2.style.display = "none";
 
+let gameStarted = false;
+let playing = false;
+let multiplayer = false;
+
+/* RESIZE */
 function resize(){
-  canvas.width=innerWidth;
-  canvas.height=innerHeight;
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
 }
-addEventListener("resize",resize);
+addEventListener("resize", resize);
 resize();
 
+/* ORIENTAÇÃO */
 function checkOrientation(){
-  rotate.style.display = innerHeight>innerWidth ? "flex":"none";
-  playing = innerWidth>innerHeight;
+  const portrait = innerHeight > innerWidth;
+  rotate.style.display = portrait ? "flex" : "none";
+  playing = !portrait && gameStarted;
 }
-addEventListener("resize",checkOrientation);
+addEventListener("resize", checkOrientation);
 checkOrientation();
 
-soloBtn.onclick=()=>start(false);
-multiBtn.onclick=()=>start(true);
+/* START */
+function startGame(isMulti){
+  multiplayer = isMulti;
+  titleScreen.style.display = "none";
+  gameDiv.style.display = "block";
+  gameStarted = true;
+  playing = true;
 
-function start(multi){
-  multiplayer=multi;
-  titleScreen.style.display="none";
-  gameDiv.style.display="block";
-  playing=true;
+  left2.style.display =
+  right2.style.display =
+  jump2.style.display = multiplayer ? "block" : "none";
+
+  /* RESET DOS JOGADORES (CORRIGE PLATAFORMA BUGADA) */
+  players[0].x = 80;
+  players[0].y = 0;
+  players[0].vx = players[0].vy = 0;
+  players[0].onGround = false;
+
+  players[1].x = 140;
+  players[1].y = 0;
+  players[1].vx = players[1].vy = 0;
+  players[1].onGround = false;
 }
 
-const players=[
-  {name:"Rikcat",color:"orange",x:80,y:0,w:32,h:32,vx:0,vy:0,onGround:false,life:5,inv:0,controls:{}},
-  {name:"EduKat",color:"purple",x:140,y:0,w:32,h:32,vx:0,vy:0,onGround:false,life:5,inv:0,controls:{}}
+soloBtn.onclick  = () => startGame(false);
+multiBtn.onclick = () => startGame(true);
+
+/* PLAYERS */
+const players = [
+  {
+    name: "Rikcat",
+    color: "orange",
+    x: 80, y: 0, w: 32, h: 32,
+    vx: 0, vy: 0,
+    onGround: false,
+    lives: 5,
+    controls: { left:false, right:false, jump:false }
+  },
+  {
+    name: "EduKat",
+    color: "purple",
+    x: 140, y: 0, w: 32, h: 32,
+    vx: 0, vy: 0,
+    onGround: false,
+    lives: 5,
+    controls: { left:false, right:false, jump:false }
+  }
 ];
 
-controls.forEach((c,i)=>{
-  c.left.ontouchstart=()=>players[i].controls.left=true;
-  c.left.ontouchend=()=>players[i].controls.left=false;
-  c.right.ontouchstart=()=>players[i].controls.right=true;
-  c.right.ontouchend=()=>players[i].controls.right=false;
-  c.jump.ontouchstart=()=>players[i].controls.jump=true;
-  c.jump.ontouchend=()=>players[i].controls.jump=false;
-  c.attack.ontouchstart=()=>players[i].controls.attack=true;
-  c.attack.ontouchend=()=>players[i].controls.attack=false;
-});
+/* CONTROLES */
+left.ontouchstart = () => players[0].controls.left = true;
+left.ontouchend   = () => players[0].controls.left = false;
+right.ontouchstart= () => players[0].controls.right = true;
+right.ontouchend  = () => players[0].controls.right = false;
+jump.ontouchstart = () => players[0].controls.jump = true;
+jump.ontouchend   = () => players[0].controls.jump = false;
 
-const platforms=[
-  {x:0,y:()=>canvas.height-40,w:3000,h:40},
-  {x:300,y:()=>canvas.height-120,w:140,h:20},
-  {x:600,y:()=>canvas.height-200,w:140,h:20},
-  {x:900,y:()=>canvas.height-280,w:140,h:20}
+left2.ontouchstart = () => players[1].controls.left = true;
+left2.ontouchend   = () => players[1].controls.left = false;
+right2.ontouchstart= () => players[1].controls.right = true;
+right2.ontouchend  = () => players[1].controls.right = false;
+jump2.ontouchstart = () => players[1].controls.jump = true;
+jump2.ontouchend   = () => players[1].controls.jump = false;
+
+/* MAPA */
+const platforms = [
+  { x:0,   y:()=>canvas.height-40, w:3000, h:40 },
+  { x:300, y:()=>canvas.height-140, w:160, h:20 },
+  { x:600, y:()=>canvas.height-220, w:160, h:20 },
+  { x:900, y:()=>canvas.height-300, w:160, h:20 }
 ];
 
+/* UPDATE */
 function update(){
   requestAnimationFrame(update);
   if(!playing) return;
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  ctx.fillStyle="#8B4513";
-  platforms.forEach(p=>ctx.fillRect(p.x,p.y(),p.w,p.h));
+  /* PLATAFORMAS */
+  ctx.fillStyle = "#8B4513";
+  platforms.forEach(p=>{
+    ctx.fillRect(p.x, p.y(), p.w, p.h);
+  });
 
-  updateEnemies(platforms);
-  drawEnemies(ctx);
-
+  /* PLAYERS */
   players.forEach((p,i)=>{
     if(i===1 && !multiplayer) return;
 
-    p.vx=0;
-    if(p.controls.left) p.vx=-4;
-    if(p.controls.right) p.vx=4;
+    p.vx = 0;
+    if(p.controls.left)  p.vx = -4;
+    if(p.controls.right) p.vx = 4;
 
     if(p.controls.jump && p.onGround){
-      p.vy=-12;
-      p.onGround=false;
+      p.vy = -12;
+      p.onGround = false;
     }
 
-    p.vy+=0.6;
-    p.x+=p.vx;
-    p.y+=p.vy;
+    p.vy += 0.6;
+    p.x += p.vx;
+    p.y += p.vy;
 
-    p.onGround=false;
+    p.onGround = false;
     platforms.forEach(pl=>{
-      const py=pl.y();
-      if(p.x<p.x+pl.w && p.x+p.w>pl.x && p.y+p.h>py && p.vy>0){
-        p.y=py-p.h;
-        p.vy=0;
-        p.onGround=true;
+      const py = pl.y();
+      if(
+        p.x < pl.x + pl.w &&
+        p.x + p.w > pl.x &&
+        p.y < py + pl.h &&
+        p.y + p.h > py &&
+        p.vy > 0
+      ){
+        p.y = py - p.h;
+        p.vy = 0;
+        p.onGround = true;
       }
     });
 
-    enemies.forEach(e=>{
-      if(!e.alive) return;
-
-      const hit = p.x<p.x+e.w && p.x+p.w>e.x && p.y<p.y+e.h && p.y+p.h>e.y;
-
-      if(hit){
-        if(p.controls.attack){
-          e.alive=false;
-        }else if(p.inv<=0){
-          p.life--;
-          p.inv=60;
-          if(p.life<=0){
-            p.life=5;
-            p.x=80;
-            p.y=0;
-          }
-        }
-      }
-    });
-
-    if(p.inv>0) p.inv--;
-
-    ctx.fillStyle=p.color;
+    /* PERSONAGEM */
+    ctx.fillStyle = p.color;
     ctx.beginPath();
-    ctx.arc(p.x+p.w/2,p.y+p.h/2,p.w/2,0,Math.PI*2);
+    ctx.arc(p.x + p.w/2, p.y + p.h/2, p.w/2, 0, Math.PI*2);
     ctx.fill();
 
-    ctx.fillStyle="white";
-    ctx.fillText(p.name+" ❤"+p.life,p.x,p.y-5);
+    /* NOME + VIDAS */
+    ctx.fillStyle = "white";
+    ctx.font = "12px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`${p.name} ♥ ${p.lives}`, p.x + p.w/2, p.y - 6);
   });
 }
+
 update();
