@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Rikcat Adventure</title>
+<title>Rikcat Adventure Online</title>
 
 <style>
 body{
@@ -49,10 +49,15 @@ body{
   z-index:20;
 }
 
-#game{display:none;}
+#game{
+  display:none;
+}
 
-canvas{display:block;}
+canvas{
+  display:block;
+}
 
+/* BOTÕES */
 .btn{
   position:fixed;
   width:70px;
@@ -65,13 +70,13 @@ canvas{display:block;}
 #left{bottom:20px; left:20px;}
 #right{bottom:20px; left:110px;}
 #jump{bottom:20px; left:200px;}
-#attack{bottom:110px; left:110px;}
+#attack{bottom:100px; left:110px;}
 
 /* P2 */
 #left2{bottom:20px; right:200px;}
 #right2{bottom:20px; right:110px;}
 #jump2{bottom:20px; right:20px;}
-#attack2{bottom:110px; right:110px;}
+#attack2{bottom:100px; right:110px;}
 </style>
 </head>
 
@@ -79,9 +84,8 @@ canvas{display:block;}
 
 <div id="titleScreen">
   <h1>🐱 Rikcat Adventure</h1>
-  <button id="soloBtn">Jogar Sozinho</button>
-  <button id="multiBtn">Multiplayer Local</button>
-  <button disabled>🌐 Online (em breve)</button>
+  <button id="soloBtn">Solo</button>
+  <button id="multiBtn">Multiplayer Online</button>
 </div>
 
 <div id="rotate">Vire o celular</div>
@@ -89,19 +93,20 @@ canvas{display:block;}
 <div id="game">
   <canvas id="canvas"></canvas>
 
+  <!-- Rikcat -->
   <div id="left" class="btn"></div>
   <div id="right" class="btn"></div>
   <div id="jump" class="btn"></div>
   <div id="attack" class="btn"></div>
 
+  <!-- EduKat -->
   <div id="left2" class="btn"></div>
   <div id="right2" class="btn"></div>
   <div id="jump2" class="btn"></div>
   <div id="attack2" class="btn"></div>
 </div>
 
-<script src="enemies.js"></script>
-<script src="firebase.js"></script>
-<script src="game.js"></script>
+<script type="module" src="firebase.js"></script>
+<script type="module" src="game.js"></script>
 </body>
 </html>
