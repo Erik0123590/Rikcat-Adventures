@@ -242,7 +242,7 @@ function update(){
     ctx.fillStyle="black";
     ctx.font="12px sans-serif";
     ctx.textAlign="center";
-    ctx.fillText(`${p.name} ❤️ ${p.lives}`,p.x+p.w/2,p.y-8);
+    ctx.fillText(`${p.name} 🧡 ${p.lives}`,p.x+p.w/2,p.y-8);
   });
 }
 update();
