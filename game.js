@@ -1,3 +1,5 @@
+import { db, ref, set, onValue, onDisconnect } from "./firebase.js";
+
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
@@ -11,167 +13,141 @@ const rotate = document.getElementById("rotate");
 const left  = document.getElementById("left");
 const right = document.getElementById("right");
 const jump  = document.getElementById("jump");
+const attack = document.getElementById("attack");
 
 const left2  = document.getElementById("left2");
 const right2 = document.getElementById("right2");
 const jump2  = document.getElementById("jump2");
+const attack2 = document.getElementById("attack2");
 
-/* ESCONDE P2 NO INÍCIO (CORREÇÃO DO SOLO) */
-left2.style.display =
-right2.style.display =
-jump2.style.display = "none";
+let playing=false;
+let multiplayer=false;
 
-let gameStarted = false;
-let playing = false;
-let multiplayer = false;
+/* ONLINE */
+const room="online_des_1";
+const playerId="p_"+Math.floor(Math.random()*99999);
+const onlinePlayers={};
 
 /* RESIZE */
 function resize(){
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
+  canvas.width=innerWidth;
+  canvas.height=innerHeight;
 }
-addEventListener("resize", resize);
+addEventListener("resize",resize);
 resize();
 
 /* ORIENTAÇÃO */
 function checkOrientation(){
-  const portrait = innerHeight > innerWidth;
-  rotate.style.display = portrait ? "flex" : "none";
-  playing = !portrait && gameStarted;
+  const portrait=innerHeight>innerWidth;
+  rotate.style.display=portrait?"flex":"none";
+  playing=!portrait;
 }
-addEventListener("resize", checkOrientation);
+addEventListener("resize",checkOrientation);
 checkOrientation();
 
 /* START */
 function startGame(isMulti){
-  multiplayer = isMulti;
-  titleScreen.style.display = "none";
-  gameDiv.style.display = "block";
-  gameStarted = true;
-  playing = true;
-
-  left2.style.display =
-  right2.style.display =
-  jump2.style.display = multiplayer ? "block" : "none";
-
-  /* RESET DOS JOGADORES (CORRIGE PLATAFORMA BUGADA) */
-  players[0].x = 80;
-  players[0].y = 0;
-  players[0].vx = players[0].vy = 0;
-  players[0].onGround = false;
-
-  players[1].x = 140;
-  players[1].y = 0;
-  players[1].vx = players[1].vy = 0;
-  players[1].onGround = false;
+  multiplayer=isMulti;
+  titleScreen.style.display="none";
+  gameDiv.style.display="block";
 }
+soloBtn.onclick=()=>startGame(false);
+multiBtn.onclick=()=>startGame(true);
 
-soloBtn.onclick  = () => startGame(false);
-multiBtn.onclick = () => startGame(true);
+/* PLAYER LOCAL */
+const rikcat={
+  x:80,y:0,w:32,h:32,
+  vx:0,vy:0,onGround:false,
+  life:3,dir:"right",attacking:false
+};
 
-/* PLAYERS */
-const players = [
-  {
-    name: "Rikcat",
-    color: "orange",
-    x: 80, y: 0, w: 32, h: 32,
-    vx: 0, vy: 0,
-    onGround: false,
-    lives: 5,
-    controls: { left:false, right:false, jump:false }
-  },
-  {
-    name: "EduKat",
-    color: "purple",
-    x: 140, y: 0, w: 32, h: 32,
-    vx: 0, vy: 0,
-    onGround: false,
-    lives: 5,
-    controls: { left:false, right:false, jump:false }
-  }
-];
+/* FIREBASE */
+const myRef=ref(db,`rooms/${room}/players/${playerId}`);
+onDisconnect(myRef).remove();
+
+onValue(ref(db,`rooms/${room}/players`),snap=>{
+  const data=snap.val();
+  if(data) Object.assign(onlinePlayers,data);
+});
 
 /* CONTROLES */
-left.ontouchstart = () => players[0].controls.left = true;
-left.ontouchend   = () => players[0].controls.left = false;
-right.ontouchstart= () => players[0].controls.right = true;
-right.ontouchend  = () => players[0].controls.right = false;
-jump.ontouchstart = () => players[0].controls.jump = true;
-jump.ontouchend   = () => players[0].controls.jump = false;
-
-left2.ontouchstart = () => players[1].controls.left = true;
-left2.ontouchend   = () => players[1].controls.left = false;
-right2.ontouchstart= () => players[1].controls.right = true;
-right2.ontouchend  = () => players[1].controls.right = false;
-jump2.ontouchstart = () => players[1].controls.jump = true;
-jump2.ontouchend   = () => players[1].controls.jump = false;
+left.ontouchstart=()=>rikcat.vx=-4;
+right.ontouchstart=()=>rikcat.vx=4;
+jump.ontouchstart=()=>{
+  if(rikcat.onGround){rikcat.vy=-12;rikcat.onGround=false;}
+};
+attack.ontouchstart=()=>rikcat.attacking=true;
+[left,right,jump,attack].forEach(b=>b.ontouchend=()=>{
+  rikcat.vx=0;rikcat.attacking=false;
+});
 
 /* MAPA */
-const platforms = [
-  { x:0,   y:()=>canvas.height-40, w:3000, h:40 },
-  { x:300, y:()=>canvas.height-140, w:160, h:20 },
-  { x:600, y:()=>canvas.height-220, w:160, h:20 },
-  { x:900, y:()=>canvas.height-300, w:160, h:20 }
+const platforms=[
+ {x:0,y:()=>canvas.height-40,w:3000,h:40},
+ {x:200,y:()=>canvas.height-120,w:140,h:20},
+ {x:420,y:()=>canvas.height-200,w:140,h:20},
 ];
 
-/* UPDATE */
+/* LOOP */
 function update(){
   requestAnimationFrame(update);
   if(!playing) return;
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  /* PLATAFORMAS */
-  ctx.fillStyle = "#8B4513";
+  rikcat.vy+=0.6;
+  rikcat.x+=rikcat.vx;
+  rikcat.y+=rikcat.vy;
+
+  rikcat.onGround=false;
   platforms.forEach(p=>{
-    ctx.fillRect(p.x, p.y(), p.w, p.h);
-  });
-
-  /* PLAYERS */
-  players.forEach((p,i)=>{
-    if(i===1 && !multiplayer) return;
-
-    p.vx = 0;
-    if(p.controls.left)  p.vx = -4;
-    if(p.controls.right) p.vx = 4;
-
-    if(p.controls.jump && p.onGround){
-      p.vy = -12;
-      p.onGround = false;
+    const py=p.y();
+    ctx.fillStyle="#8B4513";
+    ctx.fillRect(p.x,py,p.w,p.h);
+    if(
+      rikcat.x< p.x+p.w &&
+      rikcat.x+rikcat.w>p.x &&
+      rikcat.y+rikcat.h>py &&
+      rikcat.y+rikcat.h<py+p.h &&
+      rikcat.vy>0
+    ){
+      rikcat.y=py-rikcat.h;
+      rikcat.vy=0;
+      rikcat.onGround=true;
     }
-
-    p.vy += 0.6;
-    p.x += p.vx;
-    p.y += p.vy;
-
-    p.onGround = false;
-    platforms.forEach(pl=>{
-      const py = pl.y();
-      if(
-        p.x < pl.x + pl.w &&
-        p.x + p.w > pl.x &&
-        p.y < py + pl.h &&
-        p.y + p.h > py &&
-        p.vy > 0
-      ){
-        p.y = py - p.h;
-        p.vy = 0;
-        p.onGround = true;
-      }
-    });
-
-    /* PERSONAGEM */
-    ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x + p.w/2, p.y + p.h/2, p.w/2, 0, Math.PI*2);
-    ctx.fill();
-
-    /* NOME + VIDAS */
-    ctx.fillStyle = "white";
-    ctx.font = "12px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(`${p.name} ♥ ${p.lives}`, p.x + p.w/2, p.y - 6);
   });
-}
 
+  /* DESENHA RIKCAT */
+  ctx.fillStyle="orange";
+  ctx.fillRect(rikcat.x,rikcat.y,rikcat.w,rikcat.h);
+
+  if(rikcat.attacking){
+    ctx.fillStyle="yellow";
+    ctx.fillRect(rikcat.x+32,rikcat.y+12,20,8);
+  }
+
+  ctx.fillStyle="red";
+  ctx.fillRect(rikcat.x,rikcat.y-6,rikcat.life*10,4);
+
+  /* ENVIA ONLINE */
+  set(myRef,{
+    x:rikcat.x,
+    y:rikcat.y,
+    life:rikcat.life,
+    attacking:rikcat.attacking,
+    name:"Rikcat"
+  });
+
+  /* OUTROS PLAYERS */
+  for(const id in onlinePlayers){
+    if(id===playerId) continue;
+    const p=onlinePlayers[id];
+    ctx.fillStyle="purple";
+    ctx.fillRect(p.x,p.y,32,32);
+    if(p.attacking){
+      ctx.fillStyle="yellow";
+      ctx.fillRect(p.x+32,p.y+12,20,8);
+    }
+  }
+}
 update();
