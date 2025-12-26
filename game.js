@@ -13,6 +13,7 @@ const jumpBtn = document.getElementById("jump");
 let gameStarted = false;
 let playing = false;
 
+/* ================= RESIZE ================= */
 function resize() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -20,7 +21,7 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
-/* ORIENTAÇÃO */
+/* ================= ORIENTAÇÃO ================= */
 function checkOrientation() {
   const portrait = window.innerHeight > window.innerWidth;
   rotate.style.display = portrait ? "flex" : "none";
@@ -29,7 +30,7 @@ function checkOrientation() {
 window.addEventListener("resize", checkOrientation);
 checkOrientation();
 
-/* START */
+/* ================= START ================= */
 startBtn.onclick = () => {
   titleScreen.style.display = "none";
   gameDiv.style.display = "block";
@@ -37,84 +38,129 @@ startBtn.onclick = () => {
   playing = true;
 };
 
-/* PLAYER */
-const player = {
-  x: 50,
-  y: 0,
-  w: 32,
-  h: 32,
-  vx: 0,
-  vy: 0,
-  onGround: false
-};
-
-/* CONTROLES */
-let left = false;
-let right = false;
-let jump = false;
-
-leftBtn.ontouchstart = () => left = true;
-leftBtn.ontouchend = () => left = false;
-rightBtn.ontouchstart = () => right = true;
-rightBtn.ontouchend = () => right = false;
-jumpBtn.ontouchstart = () => jump = true;
-jumpBtn.ontouchend = () => jump = false;
-
-/* MAPA (PLATAFORMAS) */
-const platforms = [
-  {x:0, y:canvas.height-40, w:2000, h:40},
-  {x:200, y:450, w:120, h:20},
-  {x:380, y:380, w:120, h:20},
-  {x:560, y:320, w:120, h:20},
-  {x:740, y:260, w:120, h:20},
-  {x:920, y:200, w:120, h:20},
+/* ================= PLAYERS ================= */
+const players = [
+  {
+    name: "Rikcat",
+    color: "orange",
+    x: 80,
+    y: 0,
+    w: 32,
+    h: 32,
+    vx: 0,
+    vy: 0,
+    onGround: false,
+    controls: { left: false, right: false, jump: false }
+  },
+  {
+    name: "EduKat",
+    color: "purple",
+    x: 140,
+    y: 0,
+    w: 32,
+    h: 32,
+    vx: 0,
+    vy: 0,
+    onGround: false,
+    controls: { left: false, right: false, jump: false }
+  }
 ];
 
+/* ================= CONTROLES ================= */
+/* Player 1 – botões da esquerda */
+leftBtn.ontouchstart = () => players[0].controls.left = true;
+leftBtn.ontouchend = () => players[0].controls.left = false;
+
+rightBtn.ontouchstart = () => players[0].controls.right = true;
+rightBtn.ontouchend = () => players[0].controls.right = false;
+
+jumpBtn.ontouchstart = () => players[0].controls.jump = true;
+jumpBtn.ontouchend = () => players[0].controls.jump = false;
+
+/* Player 2 – toques na metade direita da tela */
+canvas.addEventListener("touchstart", e => {
+  for (let t of e.touches) {
+    if (t.clientX > canvas.width / 2) {
+      players[1].controls.right = true;
+      players[1].controls.jump = true;
+    }
+  }
+});
+
+canvas.addEventListener("touchend", () => {
+  players[1].controls.right = false;
+  players[1].controls.jump = false;
+});
+
+/* ================= MAPA ================= */
+const platforms = [
+  { x: 0, y: () => canvas.height - 40, w: 3000, h: 40 },
+  { x: 200, y: () => canvas.height - 120, w: 140, h: 20 },
+  { x: 420, y: () => canvas.height - 200, w: 140, h: 20 },
+  { x: 650, y: () => canvas.height - 260, w: 140, h: 20 },
+  { x: 900, y: () => canvas.height - 320, w: 140, h: 20 },
+];
+
+/* ================= UPDATE ================= */
 function update() {
   requestAnimationFrame(update);
   if (!playing) return;
 
-  /* MOVIMENTO */
-  player.vx = 0;
-  if (left) player.vx = -4;
-  if (right) player.vx = 4;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (jump && player.onGround) {
-    player.vy = -12;
-    player.onGround = false;
-  }
-
-  player.vy += 0.6;
-  player.x += player.vx;
-  player.y += player.vy;
-
-  /* COLISÃO */
-  player.onGround = false;
-  for (let p of platforms) {
-    if (
-      player.x < p.x + p.w &&
-      player.x + player.w > p.x &&
-      player.y < p.y + p.h &&
-      player.y + player.h > p.y
-    ) {
-      if (player.vy > 0) {
-        player.y = p.y - player.h;
-        player.vy = 0;
-        player.onGround = true;
-      }
-    }
-  }
-
-  /* DESENHO */
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
+  /* PLATAFORMAS */
   ctx.fillStyle = "#8B4513";
-  platforms.forEach(p => ctx.fillRect(p.x, p.y, p.w, p.h));
+  platforms.forEach(p => {
+    const py = p.y();
+    ctx.fillRect(p.x, py, p.w, p.h);
+  });
 
-  ctx.fillStyle = "orange";
-  ctx.beginPath();
-  ctx.arc(player.x+16, player.y+16, 16, 0, Math.PI*2);
-  ctx.fill();
+  /* PLAYERS */
+  players.forEach(p => {
+    p.vx = 0;
+
+    if (p.controls.left) p.vx = -4;
+    if (p.controls.right) p.vx = 4;
+
+    if (p.controls.jump && p.onGround) {
+      p.vy = -12;
+      p.onGround = false;
+    }
+
+    p.vy += 0.6;
+    p.x += p.vx;
+    p.y += p.vy;
+
+    p.onGround = false;
+
+    platforms.forEach(pl => {
+      const py = pl.y();
+      if (
+        p.x < pl.x + pl.w &&
+        p.x + p.w > pl.x &&
+        p.y < py + pl.h &&
+        p.y + p.h > py
+      ) {
+        if (p.vy > 0) {
+          p.y = py - p.h;
+          p.vy = 0;
+          p.onGround = true;
+        }
+      }
+    });
+
+    /* DESENHO DO PLAYER */
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x + p.w / 2, p.y + p.h / 2, p.w / 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    /* NOME */
+    ctx.fillStyle = "black";
+    ctx.font = "12px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(p.name, p.x + p.w / 2, p.y - 5);
+  });
 }
 
 update();
