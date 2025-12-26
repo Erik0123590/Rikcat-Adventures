@@ -57,7 +57,7 @@ canvas{
   display:block;
 }
 
-/* ================= BOTÕES ================= */
+/* BOTÕES */
 .btn{
   position:fixed;
   width:70px;
@@ -66,22 +66,24 @@ canvas{
   border-radius:50%;
 }
 
-/* P1 – Rikcat (esquerda) */
+/* P1 */
 #left{bottom:20px; left:20px;}
 #right{bottom:20px; left:110px;}
 #jump{bottom:20px; left:200px;}
+#attack{bottom:110px; left:110px;}
 
-/* P2 – EduKat (direita) */
+/* P2 */
 #left2{bottom:20px; right:200px;}
 #right2{bottom:20px; right:110px;}
 #jump2{bottom:20px; right:20px;}
+#attack2{bottom:110px; right:110px;}
 </style>
 </head>
 
 <body>
 
 <div id="titleScreen">
-  <h1>🐱 Rikcat Adventure 😺🟪</h1>
+  <h1>🐱 Rikcat Adventure</h1>
   <button id="soloBtn">Jogar Sozinho</button>
   <button id="multiBtn">Multiplayer</button>
 </div>
@@ -91,15 +93,17 @@ canvas{
 <div id="game">
   <canvas id="canvas"></canvas>
 
-  <!-- Rikcat -->
+  <!-- P1 -->
   <div id="left" class="btn"></div>
   <div id="right" class="btn"></div>
   <div id="jump" class="btn"></div>
+  <div id="attack" class="btn"></div>
 
-  <!-- EduKat -->
+  <!-- P2 -->
   <div id="left2" class="btn"></div>
   <div id="right2" class="btn"></div>
   <div id="jump2" class="btn"></div>
+  <div id="attack2" class="btn"></div>
 </div>
 
 <script src="game.js"></script>
