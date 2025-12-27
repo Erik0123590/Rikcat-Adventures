@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Rikcat Adventure</title>
+<title>Rikcat Adventure Online</title>
 
 <style>
 body{
@@ -16,7 +16,6 @@ body{
 #titleScreen{
   position:fixed;
   inset:0;
-  background:#6aa5ff;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -25,10 +24,7 @@ body{
   z-index:10;
 }
 
-#titleScreen h1{
-  color:white;
-  font-size:42px;
-}
+#titleScreen h1{color:white;font-size:40px}
 
 #titleScreen button{
   font-size:22px;
@@ -37,23 +33,9 @@ body{
   border:none;
 }
 
-#rotate{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:black;
-  color:white;
-  font-size:30px;
-  align-items:center;
-  justify-content:center;
-  z-index:20;
-}
+#game{display:none}
+canvas{display:block}
 
-#game{ display:none; }
-
-canvas{ display:block; }
-
-/* BOTÕES */
 .btn{
   position:fixed;
   width:70px;
@@ -63,41 +45,15 @@ canvas{ display:block; }
 }
 
 /* P1 */
-#left{bottom:20px; left:20px;}
-#right{bottom:20px; left:110px;}
-#jump{bottom:20px; left:200px;}
+#left{bottom:20px;left:20px}
+#right{bottom:20px;left:110px}
+#jump{bottom:20px;left:200px}
+#emoteBtn{bottom:110px;left:110px}
 
 /* P2 */
-#left2{bottom:20px; right:200px;}
-#right2{bottom:20px; right:110px;}
-#jump2{bottom:20px; right:20px;}
-
-/* EMOTES */
-#emoteBtn{
-  top:20px;
-  right:20px;
-  font-size:32px;
-  text-align:center;
-  line-height:70px;
-}
-
-#emoteMenu{
-  display:none;
-  position:fixed;
-  top:100px;
-  right:20px;
-  background:rgba(0,0,0,0.7);
-  padding:10px;
-  border-radius:10px;
-  z-index:50;
-}
-
-#emoteMenu button{
-  font-size:28px;
-  margin:5px;
-  background:none;
-  border:none;
-}
+#left2{bottom:20px;right:200px}
+#right2{bottom:20px;right:110px}
+#jump2{bottom:20px;right:20px}
 </style>
 </head>
 
@@ -105,35 +61,23 @@ canvas{ display:block; }
 
 <div id="titleScreen">
   <h1>🐱 Rikcat Adventure</h1>
-  <button id="soloBtn">Jogar Sozinho</button>
-  <button id="multiBtn">Multiplayer</button>
+  <button id="soloBtn">Solo</button>
+  <button id="multiBtn">Online</button>
 </div>
-
-<div id="rotate">Vire o celular</div>
 
 <div id="game">
   <canvas id="canvas"></canvas>
 
-  <!-- CONTROLES -->
   <div id="left" class="btn"></div>
   <div id="right" class="btn"></div>
   <div id="jump" class="btn"></div>
+  <div id="emoteBtn" class="btn"></div>
 
   <div id="left2" class="btn"></div>
   <div id="right2" class="btn"></div>
   <div id="jump2" class="btn"></div>
-
-  <!-- EMOTES -->
-  <div id="emoteBtn" class="btn">😊</div>
-
-  <div id="emoteMenu">
-    <button class="emote">😺</button>
-    <button class="emote">😂</button>
-    <button class="emote">😡</button>
-    <button class="emote">❤️</button>
-  </div>
 </div>
 
-<script src="game.js"></script>
+<script type="module" src="game.js"></script>
 </body>
 </html>
