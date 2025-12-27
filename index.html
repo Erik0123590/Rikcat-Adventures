@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Rikcat Adventure Online</title>
+<title>Rikcat Adventure — Boa Online 0.3</title>
 
 <style>
 body{
@@ -16,6 +16,7 @@ body{
 #titleScreen{
   position:fixed;
   inset:0;
+  background:#6aa5ff;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -24,7 +25,10 @@ body{
   z-index:10;
 }
 
-#titleScreen h1{color:white;font-size:40px}
+#titleScreen h1{
+  color:white;
+  font-size:42px;
+}
 
 #titleScreen button{
   font-size:22px;
@@ -33,9 +37,22 @@ body{
   border:none;
 }
 
-#game{display:none}
-canvas{display:block}
+#rotate{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:black;
+  color:white;
+  font-size:30px;
+  align-items:center;
+  justify-content:center;
+  z-index:20;
+}
 
+#game{ display:none; }
+canvas{ display:block; }
+
+/* BOTÕES */
 .btn{
   position:fixed;
   width:70px;
@@ -43,17 +60,17 @@ canvas{display:block}
   background:rgba(255,255,255,0.35);
   border-radius:50%;
 }
+.btn:active{
+  transform:scale(0.9);
+  background:rgba(255,255,255,0.6);
+}
 
-/* P1 */
-#left{bottom:20px;left:20px}
-#right{bottom:20px;left:110px}
-#jump{bottom:20px;left:200px}
-#emoteBtn{bottom:110px;left:110px}
-
-/* P2 */
-#left2{bottom:20px;right:200px}
-#right2{bottom:20px;right:110px}
-#jump2{bottom:20px;right:20px}
+/* CONTROLES */
+#left{bottom:20px; left:20px;}
+#right{bottom:20px; left:110px;}
+#jump{bottom:20px; left:200px;}
+#attack{bottom:100px; left:110px;}
+#emote{bottom:100px; left:200px;}
 </style>
 </head>
 
@@ -62,8 +79,10 @@ canvas{display:block}
 <div id="titleScreen">
   <h1>🐱 Rikcat Adventure</h1>
   <button id="soloBtn">Solo</button>
-  <button id="multiBtn">Online</button>
+  <button id="multiBtn">Multiplayer Online</button>
 </div>
+
+<div id="rotate">Vire o celular</div>
 
 <div id="game">
   <canvas id="canvas"></canvas>
@@ -71,13 +90,11 @@ canvas{display:block}
   <div id="left" class="btn"></div>
   <div id="right" class="btn"></div>
   <div id="jump" class="btn"></div>
-  <div id="emoteBtn" class="btn"></div>
-
-  <div id="left2" class="btn"></div>
-  <div id="right2" class="btn"></div>
-  <div id="jump2" class="btn"></div>
+  <div id="attack" class="btn"></div>
+  <div id="emote" class="btn"></div>
 </div>
 
+<script type="module" src="firebase.js"></script>
 <script type="module" src="game.js"></script>
 </body>
 </html>
