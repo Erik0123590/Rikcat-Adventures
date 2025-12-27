@@ -4,12 +4,8 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 const titleScreen = document.getElementById("titleScreen");
-const configScreen = document.getElementById("configScreen");
 const soloBtn = document.getElementById("soloBtn");
 const multiBtn = document.getElementById("multiBtn");
-const chooseRikcat = document.getElementById("chooseRikcat");
-const choosePolvo = document.getElementById("choosePolvo");
-const startBtn = document.getElementById("startBtn");
 const gameDiv = document.getElementById("game");
 const rotate = document.getElementById("rotate");
 
@@ -22,6 +18,12 @@ const attack= document.getElementById("attack");
 /* EMOTES */
 const emoteBtn = document.getElementById("emoteBtn");
 const emoteMenu = document.getElementById("emoteMenu");
+
+/* CONFIGURAÇÕES */
+const settingsBtn = document.getElementById("settingsBtn");
+const settingsMenu = document.getElementById("settingsMenu");
+const skinSelect = document.getElementById("skinSelect");
+const bodyColorInput = document.getElementById("bodyColor");
 
 /* ONLINE */
 const room = "online_salas_1";
@@ -46,29 +48,21 @@ checkOrientation();
 
 /* START */
 let playing=false;
-function showConfig(online){
+function startGame(online){
   onlineEnabled = online;
-  titleScreen.style.display = "none";
-  configScreen.style.display = "flex";
-}
-soloBtn.onclick = () => showConfig(false);
-multiBtn.onclick = () => showConfig(true);
-
-/* PLAYER */
-const rikcat = {
-  x:80, y:0, w:32, h:32,
-  vx:0, vy:0, onGround:false,
-  emote:null,
-  character:"rikcat" // padrão
-};
-
-/* CONFIG SCREEN */
-chooseRikcat.onclick = ()=> rikcat.character="rikcat";
-choosePolvo.onclick  = ()=> rikcat.character="polvo";
-startBtn.onclick = ()=>{
-  configScreen.style.display="none";
+  titleScreen.style.display="none";
   gameDiv.style.display="block";
   playing=true;
+}
+soloBtn.onclick=()=>startGame(false);
+multiBtn.onclick=()=>startGame(true);
+
+/* PLAYER */
+const rikcat={
+  x:80, y:0, w:32, h:32,
+  vx:0, vy:0, onGround:false,
+  life:3, attacking:false, emote:null,
+  skin:"rikcat", color:"#FFB000"
 };
 
 /* FIREBASE */
@@ -81,86 +75,70 @@ onValue(ref(db,`rooms/${room}/players`), snap=>{
 });
 
 /* CONTROLES */
-left.ontouchstart = ()=>rikcat.vx=-4;
+left.ontouchstart=()=>rikcat.vx=-4;
 right.ontouchstart=()=>rikcat.vx=4;
-jump.ontouchstart = ()=>{
-  if(rikcat.onGround){
-    rikcat.vy=-12;
-    rikcat.onGround=false;
-  }
+jump.ontouchstart=()=>{
+  if(rikcat.onGround){ rikcat.vy=-12; rikcat.onGround=false; }
 };
-attack.ontouchstart = ()=>rikcat.attacking=true;
+attack.ontouchstart=()=>rikcat.attacking=true;
 [left,right,jump,attack].forEach(b=>{
-  b.ontouchend = ()=>{
-    rikcat.vx=0;
-    rikcat.attacking=false;
-  };
+  b.ontouchend=()=>{ rikcat.vx=0; rikcat.attacking=false; }
 });
 
 /* EMOTES */
 if(emoteBtn && emoteMenu){
-  emoteBtn.onclick = ()=>{
-    emoteMenu.style.display = emoteMenu.style.display==="flex"?"none":"flex";
-  };
+  emoteBtn.onclick=()=> emoteMenu.style.display = emoteMenu.style.display==="flex"?"none":"flex";
   document.querySelectorAll(".emote").forEach(btn=>{
-    btn.onclick = ()=>{
+    btn.onclick=()=>{
       rikcat.emote = btn.textContent;
       emoteMenu.style.display="none";
     };
   });
 }
 
+/* CONFIGURAÇÕES */
+settingsBtn.onclick=()=> settingsMenu.style.display = settingsMenu.style.display==="flex"?"none":"flex";
+skinSelect.onchange=()=> rikcat.skin = skinSelect.value;
+bodyColorInput.oninput=()=> rikcat.color = bodyColorInput.value;
+
 /* MAPA */
-const platforms = [
+const platforms=[
   {x:0,y:()=>canvas.height-40,w:3000,h:40},
   {x:200,y:()=>canvas.height-120,w:140,h:20},
   {x:420,y:()=>canvas.height-200,w:140,h:20},
 ];
 
-/* DESENHO RIKCAT */
-function drawRikcat(x,y,color="#FFB000",emote=null){
-  ctx.save();
-  ctx.translate(x,y);
+/* DESENHO */
+function drawRikcat(x,y,scale=1,color="#FFB000",emote=null){
+  ctx.save(); ctx.translate(x,y); ctx.scale(scale,scale);
 
   const outline="#000", earInside="#FF2FA3", noseColor="#FF2FA3";
-
   ctx.lineWidth=4;
 
   // ORELHAS
   ctx.fillStyle=color; ctx.strokeStyle=outline;
-  ctx.beginPath();
-  ctx.moveTo(-18,-2); ctx.lineTo(-40,-28); ctx.lineTo(-8,-22);
+  ctx.beginPath(); ctx.moveTo(-18,-2); ctx.lineTo(-40,-28); ctx.lineTo(-8,-22);
   ctx.closePath(); ctx.fill(); ctx.stroke();
   ctx.fillStyle=earInside;
-  ctx.beginPath();
-  ctx.moveTo(-20,-8); ctx.lineTo(-32,-22); ctx.lineTo(-14,-18);
+  ctx.beginPath(); ctx.moveTo(-20,-8); ctx.lineTo(-32,-22); ctx.lineTo(-14,-18);
   ctx.closePath(); ctx.fill();
 
   ctx.fillStyle=color;
-  ctx.beginPath();
-  ctx.moveTo(18,-2); ctx.lineTo(40,-28); ctx.lineTo(8,-22);
+  ctx.beginPath(); ctx.moveTo(18,-2); ctx.lineTo(40,-28); ctx.lineTo(8,-22);
   ctx.closePath(); ctx.fill(); ctx.stroke();
   ctx.fillStyle=earInside;
-  ctx.beginPath();
-  ctx.moveTo(20,-8); ctx.lineTo(32,-22); ctx.lineTo(14,-18);
+  ctx.beginPath(); ctx.moveTo(20,-8); ctx.lineTo(32,-22); ctx.lineTo(14,-18);
   ctx.closePath(); ctx.fill();
 
   // CABEÇA
-  ctx.fillStyle=color;
-  ctx.beginPath();
-  ctx.arc(0,6,26,0,Math.PI*2);
-  ctx.fill(); ctx.stroke();
+  ctx.fillStyle=color; ctx.beginPath(); ctx.arc(0,6,26,0,Math.PI*2); ctx.fill(); ctx.stroke();
 
   // OLHOS
-  ctx.fillStyle="#000";
-  ctx.fillRect(-8,0,4,14);
-  ctx.fillRect(4,0,4,14);
+  ctx.fillStyle="#000"; ctx.fillRect(-8,0,4,14); ctx.fillRect(4,0,4,14);
 
   // NARIZ
   ctx.fillStyle=noseColor;
-  ctx.beginPath();
-  ctx.moveTo(0,14); ctx.lineTo(-6,22); ctx.lineTo(6,22);
-  ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(0,14); ctx.lineTo(-6,22); ctx.lineTo(6,22); ctx.closePath(); ctx.fill();
 
   // BOCA
   ctx.beginPath();
@@ -171,35 +149,18 @@ function drawRikcat(x,y,color="#FFB000",emote=null){
   ctx.stroke();
 
   // EMOTE
-  if(emote){
-    ctx.font="20px sans-serif";
-    ctx.fillText(emote,-10,-35);
-  }
+  if(emote){ ctx.font="24px sans-serif"; ctx.fillText(emote,-10,-35); }
 
   ctx.restore();
 }
 
-/* DESENHO POLVO */
-function drawPolvo(x, y, scale = 2, emote = null) {
-  ctx.save();
-  ctx.translate(x, y);
-
-  // Ajuste do tamanho
-  ctx.font = `${32 * scale}px sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "alphabetic"; // melhor para "grudar" no chão
-  ctx.fillText("🐙", 0, 0);
-
-  // Se tiver emote, desenha acima do polvo
-  if (emote) {
-    ctx.font = `${24 * scale}px sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "bottom";
-    ctx.fillText(emote, 0, -10 * scale); // posição acima do polvo
-  }
-
+function drawPolvo(x,y,scale=2,emote=null){
+  ctx.save(); ctx.translate(x,y); ctx.scale(scale,scale);
+  ctx.font="36px serif"; ctx.textAlign="center"; ctx.fillText("🐙",0,0);
+  if(emote){ ctx.font="24px sans-serif"; ctx.fillText(emote,0,-50); }
   ctx.restore();
 }
+
 /* LOOP */
 function update(){
   requestAnimationFrame(update);
@@ -229,22 +190,17 @@ function update(){
     }
   });
 
-  if(rikcat.character==="rikcat") drawRikcat(rikcat.x,rikcat.y,"#FFB000",rikcat.emote);
-  else drawPolvo(rikcat.x,rikcat.y,1,rikcat.emote);
+  if(rikcat.skin==="rikcat") drawRikcat(rikcat.x,rikcat.y,1,rikcat.color,rikcat.emote);
+  else drawPolvo(rikcat.x,rikcat.y,2,rikcat.emote);
 
   if(onlineEnabled){
-    set(myRef,{
-      x:rikcat.x,
-      y:rikcat.y,
-      emote:rikcat.emote,
-      character: rikcat.character
-    });
+    set(myRef,{x:rikcat.x,y:rikcat.y,skin:rikcat.skin,color:rikcat.color,emote:rikcat.emote});
 
     for(const id in onlinePlayers){
       if(id===playerId) continue;
       const p = onlinePlayers[id];
-      if(p.character==="polvo") drawPolvo(p.x,p.y,1,p.emote);
-      else drawRikcat(p.x,p.y,"#A020F0",p.emote);
+      if(p.skin==="rikcat") drawRikcat(p.x,p.y,1,p.color,p.emote);
+      else drawPolvo(p.x,p.y,2,p.emote);
     }
   }
 }
