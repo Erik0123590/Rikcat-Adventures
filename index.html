@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Rikcat Adventure — Online Emotes 4</title>
+<title>Rikcat Adventure — Online Emotes 5</title>
 
 <style>
 body{
@@ -22,16 +22,20 @@ body{
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  gap:15px;
+  gap:12px;
   z-index:10;
 }
-#titleScreen h1{
-  color:white;
-  font-size:42px;
+#titleScreen h1{color:white;font-size:38px;}
+#titleScreen input{
+  font-size:18px;
+  padding:8px;
+  border-radius:8px;
+  border:none;
+  text-align:center;
 }
 #titleScreen button{
-  font-size:22px;
-  padding:12px 30px;
+  font-size:20px;
+  padding:10px 26px;
   border-radius:10px;
   border:none;
 }
@@ -50,8 +54,8 @@ body{
 }
 
 /* GAME */
-#game{ display:none; }
-canvas{ display:block; }
+#game{display:none;}
+canvas{display:block;}
 
 /* BOTÕES */
 .btn{
@@ -80,45 +84,20 @@ canvas{ display:block; }
   font-size:26px;
   z-index:30;
 }
-
 #emoteMenu{
   position:fixed;
   top:60px;
   right:15px;
-  width:220px;
-  height:170px;
+  width:180px;
   display:none;
+  flex-wrap:wrap;
+  gap:6px;
   background:rgba(0,0,0,0.6);
   padding:10px;
   border-radius:10px;
   z-index:30;
-  overflow:hidden;
 }
-
-/* ÁREA DESLIZÁVEL */
-#emotePages{
-  display:flex;
-  transition:transform 0.3s ease;
-}
-
-/* CADA PÁGINA */
-.emotePage{
-  min-width:200px;
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:8px;
-}
-
-.emote{
-  font-size:22px;
-}
-
-/* NAVEGAÇÃO */
-.emoteNav{
-  display:flex;
-  justify-content:space-between;
-  margin-top:6px;
-}
+.emote{font-size:22px;}
 </style>
 </head>
 
@@ -126,8 +105,9 @@ canvas{ display:block; }
 
 <div id="titleScreen">
   <h1>🐱 Rikcat Adventure</h1>
+  <input id="roomInput" placeholder="Nome da sala">
   <button id="soloBtn">Solo</button>
-  <button id="multiBtn">Multiplayer Online</button>
+  <button id="multiBtn">Entrar na Sala</button>
 </div>
 
 <div id="rotate">Vire o celular</div>
@@ -140,14 +120,14 @@ canvas{ display:block; }
   <div id="jump" class="btn"></div>
   <div id="attack" class="btn"></div>
 
-  <!-- EMOTES -->
   <button id="emoteBtn">😺</button>
   <div id="emoteMenu">
-    <div id="emotePages"></div>
-    <div class="emoteNav">
-      <button id="prevEmote">⬅️</button>
-      <button id="nextEmote">➡️</button>
-    </div>
+    <button class="emote">😀</button>
+    <button class="emote">😡</button>
+    <button class="emote">😴</button>
+    <button class="emote">😱</button>
+    <button class="emote">😂</button>
+    <button class="emote">😍</button>
   </div>
 </div>
 
