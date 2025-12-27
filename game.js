@@ -9,11 +9,6 @@ const multiBtn = document.getElementById("multiBtn");
 const configBtn = document.getElementById("configBtn");
 const gameDiv = document.getElementById("game");
 const rotate = document.getElementById("rotate");
-const configMenu = document.getElementById("configMenu");
-const configBackBtn = document.getElementById("configBackBtn");
-const skinSelect = document.getElementById("skinSelect");
-const colorPicker = document.getElementById("colorPicker");
-const roomInput = document.getElementById("roomInput");
 
 /* CONTROLES */
 const left  = document.getElementById("left");
@@ -25,21 +20,18 @@ const attack= document.getElementById("attack");
 const emoteBtn = document.getElementById("emoteBtn");
 const emoteMenu = document.getElementById("emoteMenu");
 
+/* CONFIG */
+const configMenu = document.getElementById("configMenu");
+const skinSelect = document.getElementById("skinSelect");
+const colorSelect = document.getElementById("colorSelect");
+const exitConfig = document.getElementById("exitConfig");
+
 /* ONLINE */
-let room = roomInput.value;
+const room = "salas_online_1";
 const playerId = "p_" + Math.floor(Math.random()*99999);
 let onlineEnabled = false;
+let myRef;
 const onlinePlayers = {};
-
-/* AUDIO */
-const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-function playSound(freq,time=0.1){
-  const osc = audioCtx.createOscillator();
-  osc.frequency.value = freq;
-  osc.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime+time);
-}
 
 /* RESIZE */
 function resize(){
@@ -56,16 +48,32 @@ function checkOrientation(){
 addEventListener("resize", checkOrientation);
 checkOrientation();
 
+/* PLAYER */
+const rikcat={
+  x:80,y:0,w:32,h:32,
+  vx:0,vy:0,onGround:false,
+  life:3,attacking:false,
+  emotes:[], emote:null,
+  skin:"rikcat", color:"#FFB000"
+};
+
 /* START */
 let playing=false;
 function startGame(online){
   onlineEnabled = online;
   titleScreen.style.display="none";
-  configMenu.style.display="none";
   gameDiv.style.display="block";
   playing=true;
 
-  room = roomInput.value;
+  if(onlineEnabled){
+    myRef = ref(db, `rooms/${room}/players/${playerId}`);
+    onDisconnect(myRef).remove();
+
+    onValue(ref(db,`rooms/${room}/players`), snap=>{
+      Object.keys(onlinePlayers).forEach(k=>delete onlinePlayers[k]);
+      if(snap.val()) Object.assign(onlinePlayers,snap.val());
+    });
+  }
 }
 soloBtn.onclick=()=>startGame(false);
 multiBtn.onclick=()=>startGame(true);
@@ -74,32 +82,14 @@ multiBtn.onclick=()=>startGame(true);
 configBtn.onclick = ()=>{
   titleScreen.style.display="none";
   configMenu.style.display="flex";
+  gameDiv.style.display="none";
 };
-configBackBtn.onclick = ()=>{
+exitConfig.onclick = ()=>{
   configMenu.style.display="none";
   titleScreen.style.display="flex";
+  rikcat.skin = skinSelect.value;
+  rikcat.color = colorSelect.value;
 };
-
-/* PLAYER */
-const rikcat={
-  x:80,y:0,w:32,h:32,
-  vx:0,vy:0,onGround:false,
-  life:3,attacking:false,
-  emotes:[],
-  skin:skinSelect.value,
-  color:colorPicker.value
-};
-
-/* FIREBASE */
-let myRef = ref(db, `rooms/${room}/players/${playerId}`);
-onDisconnect(myRef).remove();
-
-onValue(ref(db,`rooms/${room}/players`), snap=>{
-  Object.keys(onlinePlayers).forEach(k=>{
-    if(!snap.val() || !snap.val()[k]) delete onlinePlayers[k];
-  });
-  if(snap.val()) Object.assign(onlinePlayers,snap.val());
-});
 
 /* CONTROLES */
 left.ontouchstart=()=>rikcat.vx=-4;
@@ -108,15 +98,9 @@ jump.ontouchstart=()=>{
   if(rikcat.onGround){
     rikcat.vy=-12;
     rikcat.onGround=false;
-    playSound(300);
-    if(navigator.vibrate) navigator.vibrate(50);
   }
 };
-attack.ontouchstart=()=>{
-  rikcat.attacking=true;
-  playSound(500,0.08);
-  if(navigator.vibrate) navigator.vibrate(30);
-};
+attack.ontouchstart=()=>rikcat.attacking=true;
 [left,right,jump,attack].forEach(b=>b.ontouchend=()=>{
   rikcat.vx=0;
   rikcat.attacking=false;
@@ -125,13 +109,13 @@ attack.ontouchstart=()=>{
 /* EMOTES */
 if(emoteBtn && emoteMenu){
   emoteBtn.onclick=()=>{
-    emoteMenu.style.display =
-      emoteMenu.style.display==="flex"?"none":"flex";
+    emoteMenu.style.display = emoteMenu.style.display==="flex"?"none":"flex";
   };
 
   document.querySelectorAll(".emote").forEach(btn=>{
     btn.onclick=()=>{
-      rikcat.emotes.push(btn.textContent);
+      rikcat.emote = btn.textContent;
+      rikcat.emotes.push(rikcat.emote);
       if(rikcat.emotes.length>5) rikcat.emotes.shift();
       emoteMenu.style.display="none";
     };
@@ -145,72 +129,41 @@ const platforms=[
   {x:420,y:()=>canvas.height-200,w:140,h:20},
 ];
 
-/* DESENHO RIKCAT / POLVO */
-function drawCharacter(x,y,scale=1,skin="rikcat",color="#FFB000",emotes=[]){
+/* RIKCAT / POLVO */
+function drawRikcat(x,y,scale=1,color="#FFB000",emotes=[],skin="rikcat"){
   ctx.save();
   ctx.translate(x,y);
   ctx.scale(scale,scale);
 
-  // RIKCAT
   if(skin==="rikcat"){
-    const outline="#000";
-    const earInside="#FF2FA3";
-    const noseColor="#FF2FA3";
+    const outline="#000"; const earInside="#FF2FA3"; const noseColor="#FF2FA3";
     ctx.lineWidth=4;
-
     // ORELHAS ATRÁS
     ctx.fillStyle=color; ctx.strokeStyle=outline;
-    ctx.beginPath();
-    ctx.moveTo(-18,-2); ctx.lineTo(-40,-28); ctx.lineTo(-8,-22);
-    ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.fillStyle=earInside;
-    ctx.beginPath();
-    ctx.moveTo(-20,-8); ctx.lineTo(-32,-22); ctx.lineTo(-14,-18);
-    ctx.closePath(); ctx.fill();
-
-    ctx.fillStyle=color;
-    ctx.beginPath();
-    ctx.moveTo(18,-2); ctx.lineTo(40,-28); ctx.lineTo(8,-22);
-    ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.fillStyle=earInside;
-    ctx.beginPath();
-    ctx.moveTo(20,-8); ctx.lineTo(32,-22); ctx.lineTo(14,-18);
-    ctx.closePath(); ctx.fill();
-
+    ctx.beginPath(); ctx.moveTo(-18,-2); ctx.lineTo(-40,-28); ctx.lineTo(-8,-22); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=earInside; ctx.beginPath(); ctx.moveTo(-20,-8); ctx.lineTo(-32,-22); ctx.lineTo(-14,-18); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=color; ctx.beginPath(); ctx.moveTo(18,-2); ctx.lineTo(40,-28); ctx.lineTo(8,-22); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=earInside; ctx.beginPath(); ctx.moveTo(20,-8); ctx.lineTo(32,-22); ctx.lineTo(14,-18); ctx.closePath(); ctx.fill();
     // CABEÇA
-    ctx.fillStyle=color;
-    ctx.beginPath();
-    ctx.arc(0,6,26,0,Math.PI*2);
-    ctx.fill(); ctx.stroke();
-
+    ctx.fillStyle=color; ctx.beginPath(); ctx.arc(0,6,26,0,Math.PI*2); ctx.fill(); ctx.stroke();
     // OLHOS
-    ctx.fillStyle="#000";
-    ctx.fillRect(-8,0,4,14);
-    ctx.fillRect(4,0,4,14);
-
+    ctx.fillStyle="#000"; ctx.fillRect(-8,0,4,14); ctx.fillRect(4,0,4,14);
     // NARIZ
-    ctx.fillStyle=noseColor;
-    ctx.beginPath();
-    ctx.moveTo(0,14); ctx.lineTo(-6,22); ctx.lineTo(6,22);
-    ctx.closePath(); ctx.fill();
-
+    ctx.fillStyle=noseColor; ctx.beginPath(); ctx.moveTo(0,14); ctx.lineTo(-6,22); ctx.lineTo(6,22); ctx.closePath(); ctx.fill();
     // BOCA
-    ctx.beginPath();
-    ctx.moveTo(0,22); ctx.lineTo(0,28);
-    ctx.quadraticCurveTo(-4,30,-6,28);
-    ctx.moveTo(0,28);
-    ctx.quadraticCurveTo(4,30,6,28);
-    ctx.stroke();
-  } else {
+    ctx.beginPath(); ctx.moveTo(0,22); ctx.lineTo(0,28); ctx.quadraticCurveTo(-4,30,-6,28); ctx.moveTo(0,28); ctx.quadraticCurveTo(4,30,6,28); ctx.stroke();
+  }else{
     // POLVO
-    ctx.font="50px sans-serif";
-    ctx.fillText("🐙",-25,-15);
+    ctx.font="60px sans-serif";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillText("🐙",0,0);
   }
 
   // EMOTES
   emotes.forEach((e,i)=>{
     ctx.font="24px sans-serif";
-    ctx.fillText(e,-10,-35-(i*30));
+    ctx.fillText(e,-10 + i*20,-35);
   });
 
   ctx.restore();
@@ -223,7 +176,7 @@ function update(){
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // física
+  // Física
   rikcat.vy+=0.6;
   rikcat.x+=rikcat.vx;
   rikcat.y+=rikcat.vy;
@@ -238,32 +191,24 @@ function update(){
        rikcat.y+rikcat.h > py &&
        rikcat.y+rikcat.h < py+p.h &&
        rikcat.vy>0){
-      rikcat.y=py-rikcat.h;
-      rikcat.vy=0;
-      rikcat.onGround=true;
-    }
+         rikcat.y=py-rikcat.h;
+         rikcat.vy=0;
+         rikcat.onGround=true;
+       }
   });
 
-  drawCharacter(rikcat.x,rikcat.y,1,rikcat.skin,rikcat.color,rikcat.emotes);
+  drawRikcat(rikcat.x,rikcat.y,1,rikcat.color,rikcat.emotes,rikcat.skin);
 
-  if(onlineEnabled){
-    myRef = ref(db, `rooms/${room}/players/${playerId}`);
-    set(myRef,{
-      x:rikcat.x,
-      y:rikcat.y,
-      emotes:rikcat.emotes,
-      skin:rikcat.skin,
-      color:rikcat.color
+  if(onlineEnabled && myRef){
+    set(myRef,{x:rikcat.x,y:rikcat.y,emotes:rikcat.emotes,skin:rikcat.skin,color:rikcat.color});
+
+    const keys = Object.keys(onlinePlayers);
+    keys.forEach((id,i)=>{
+      if(id===playerId) return;
+      const p=onlinePlayers[id];
+      const color = i===2?"#00FF00":"#A020F0"; // 3º jogador verde
+      drawRikcat(p.x,p.y,1,p.color,p.emotes,p.skin);
     });
-
-    let i=0;
-    for(const id in onlinePlayers){
-      if(id===playerId) continue;
-      const p = onlinePlayers[id];
-      const col = (i>=2)?"#00FF00":p.color||"#A020F0";
-      drawCharacter(p.x,p.y,1,p.skin,col,p.emotes);
-      i++;
-    }
   }
 }
 update();
