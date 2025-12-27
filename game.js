@@ -101,81 +101,91 @@ const platforms=[
 ];
 
 /* SPRITE */
-function drawRikcat(x, y, scale = 1, bodyColor = "#FFA500") {
+function drawRikcat(x, y, scale = 1, bodyColor = "#FFB000") {
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(scale, scale);
 
   const outline = "#000";
-  const earInside = "#FFB347";
-  const noseColor = "#FF4FA3";
+  const earInside = "#FF2FA3";
+  const noseColor = "#FF2FA3";
 
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 4;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
 
-  // 🟠 Cabeça
+  // 👂 ORELHAS (DESENHADAS PRIMEIRO = ATRÁS)
+
+  ctx.fillStyle = bodyColor;
+  ctx.strokeStyle = outline;
+
+  // Orelha esquerda
+  ctx.beginPath();
+  ctx.moveTo(-18, -10);
+  ctx.lineTo(-40, -38);
+  ctx.lineTo(-8, -32);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Dentro esquerda
+  ctx.fillStyle = earInside;
+  ctx.beginPath();
+  ctx.moveTo(-20, -16);
+  ctx.lineTo(-32, -32);
+  ctx.lineTo(-14, -28);
+  ctx.closePath();
+  ctx.fill();
+
+  // Orelha direita
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.moveTo(18, -10);
+  ctx.lineTo(40, -38);
+  ctx.lineTo(8, -32);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Dentro direita
+  ctx.fillStyle = earInside;
+  ctx.beginPath();
+  ctx.moveTo(20, -16);
+  ctx.lineTo(32, -32);
+  ctx.lineTo(14, -28);
+  ctx.closePath();
+  ctx.fill();
+
+  // 🟠 CABEÇA (por cima das orelhas)
   ctx.fillStyle = bodyColor;
   ctx.strokeStyle = outline;
   ctx.beginPath();
-  ctx.arc(0, 0, 16, 0, Math.PI * 2);
+  ctx.arc(0, 6, 26, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-
-  // 👂 Orelha esquerda (MESMA direção, só mais próxima)
-  ctx.beginPath();
-  ctx.moveTo(-10, -10);
-  ctx.lineTo(-22, -26);
-  ctx.lineTo(-4, -22);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // 👂 Orelha direita (MESMA direção, só mais próxima)
-  ctx.beginPath();
-  ctx.moveTo(10, -10);
-  ctx.lineTo(22, -26);
-  ctx.lineTo(4, -22);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // 👂 Dentro da orelha esquerda
-  ctx.fillStyle = earInside;
-  ctx.beginPath();
-  ctx.moveTo(-10, -12);
-  ctx.lineTo(-18, -22);
-  ctx.lineTo(-6, -20);
-  ctx.closePath();
-  ctx.fill();
-
-  // 👂 Dentro da orelha direita
-  ctx.beginPath();
-  ctx.moveTo(10, -12);
-  ctx.lineTo(18, -22);
-  ctx.lineTo(6, -20);
-  ctx.closePath();
-  ctx.fill();
 
   // 👁 Olhos
   ctx.fillStyle = "#000";
-  ctx.fillRect(-6, -4, 3, 8);
-  ctx.fillRect(3, -4, 3, 8);
+  ctx.fillRect(-8, 0, 4, 14);
+  ctx.fillRect(4, 0, 4, 14);
 
-  // 👃 Nariz com contorno
+  // 👃 Nariz
   ctx.fillStyle = noseColor;
-  ctx.strokeStyle = outline;
   ctx.beginPath();
-  ctx.moveTo(0, 2);
-  ctx.lineTo(-4, 8);
-  ctx.lineTo(4, 8);
+  ctx.moveTo(0, 14);
+  ctx.lineTo(-6, 22);
+  ctx.lineTo(6, 22);
   ctx.closePath();
   ctx.fill();
-  ctx.stroke();
 
   // 👄 Boca
   ctx.strokeStyle = outline;
   ctx.beginPath();
-  ctx.moveTo(-5, 10);
-  ctx.quadraticCurveTo(0, 13, 5, 10);
+  ctx.moveTo(0, 22);
+  ctx.lineTo(0, 28);
+  ctx.quadraticCurveTo(-4, 30, -6, 28);
+  ctx.moveTo(0, 28);
+  ctx.quadraticCurveTo(4, 30, 6, 28);
   ctx.stroke();
 
   ctx.restore();
