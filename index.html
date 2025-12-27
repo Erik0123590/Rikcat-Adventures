@@ -5,93 +5,127 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Rikcat Adventures v1</title>
 <style>
-body{margin:0;overflow:hidden;background:#6aa5ff;font-family:sans-serif;}
+body {
+    margin: 0;
+    overflow: hidden;
+    background: #6aa5ff;
+    font-family: sans-serif;
+}
 
 /* TELA DE TÍTULO */
-#titleScreen{position:fixed;inset:0;background:#6aa5ff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;z-index:10;}
-#titleScreen h1{color:white;font-size:42px;}
-#titleScreen button{font-size:22px;padding:12px 30px;border-radius:10px;border:none;}
+#titleScreen {
+    position: fixed;
+    inset: 0;
+    background: #6aa5ff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    z-index: 10;
+}
+#titleScreen h1 {
+    color: white;
+    font-size: 42px;
+}
+#titleScreen button {
+    font-size: 22px;
+    padding: 12px 30px;
+    border-radius: 10px;
+    border: none;
+}
 
 /* ROTATE */
-#rotate{display:none;position:fixed;inset:0;background:black;color:white;font-size:30px;align-items:center;justify-content:center;z-index:20;}
+#rotate {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: black;
+    color: white;
+    font-size: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
 
 /* GAME */
-#game{display:none;}
-canvas{display:block;}
+#game { display: none; }
+canvas { display: block; }
 
 /* BOTÕES */
-.btn{position:fixed;width:70px;height:70px;background:rgba(255,255,255,0.35);border-radius:50%;}
-.btn:active{transform:scale(0.9);background:rgba(255,255,255,0.6);}
-#left{bottom:20px;left:20px;}
-#right{bottom:20px;left:110px;}
-#jump{bottom:20px;left:200px;}
-#attack{bottom:100px;left:110px;}
+.btn {
+    position: fixed;
+    width: 70px;
+    height: 70px;
+    background: rgba(255,255,255,0.35);
+    border-radius: 50%;
+    font-size: 32px;
+    text-align: center;
+    line-height: 70px;
+}
+.btn:active {
+    transform: scale(0.9);
+    background: rgba(255,255,255,0.6);
+}
 
-/* CONTROLES AQUÁTICOS */
-#aquaticUp{bottom:100px;left:110px;display:none;}
-#aquaticDown{bottom:20px;left:110px;display:none;}
-#aquaticLeft{bottom:20px;left:20px;display:none;}
-#aquaticRight{bottom:20px;left:200px;display:none;}
+/* POSIÇÃO DOS BOTÕES */
+#left { bottom: 20px; left: 20px; }
+#right { bottom: 20px; left: 110px; }
+#jump { bottom: 20px; left: 200px; }
+#attack { bottom: 100px; left: 110px; }
 
 /* EMOTES */
-#emoteBtn{position:fixed;top:15px;right:15px;font-size:26px;z-index:30;}
-#emoteMenu{position:fixed;top:60px;right:15px;display:none;flex-direction:column;gap:8px;background:rgba(0,0,0,0.6);padding:10px;border-radius:10px;z-index:30;}
-.emote{font-size:22px;}
-
-/* CONFIGURAÇÕES */
-#settingsMenu{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;flex-direction:column;align-items:center;justify-content:center;gap:15px;z-index:50;color:white;}
-#settingsMenu label{font-size:20px;margin:5px;}
-#settingsMenu input[type="color"]{width:50px;height:30px;border:none;margin-left:10px;}
+#emoteBtn {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    font-size: 26px;
+    z-index: 30;
+}
+#emoteMenu {
+    position: fixed;
+    top: 60px;
+    right: 15px;
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(0,0,0,0.6);
+    padding: 10px;
+    border-radius: 10px;
+    z-index: 30;
+}
+.emote {
+    font-size: 22px;
+}
 </style>
 </head>
 <body>
 
 <div id="titleScreen">
-  <h1>🐱 Rikcat Adventures</h1>
-  <button id="soloBtn">Solo</button>
-  <button id="multiBtn">Multiplayer Online</button>
-  <button id="settingsBtn">⚙️ Configurações</button>
+    <h1>🐱 Rikcat Adventures</h1>
+    <button id="soloBtn">Solo</button>
+    <button id="multiBtn">Multiplayer Online</button>
+    <button id="configBtn">⚙️ Configurações</button>
 </div>
 
 <div id="rotate">Vire o celular</div>
 
 <div id="game">
-  <canvas id="canvas"></canvas>
+    <canvas id="canvas"></canvas>
 
-  <!-- Controles Solo -->
-  <div id="left" class="btn">←</div>
-  <div id="right" class="btn">→</div>
-  <div id="jump" class="btn">↑</div>
-  <div id="attack" class="btn">🐾</div>
+    <div id="left" class="btn">⬅️</div>
+    <div id="right" class="btn">➡️</div>
+    <div id="jump" class="btn">⬆️</div>
+    <div id="attack" class="btn">🐾</div>
 
-  <!-- Controles Aquáticos -->
-  <div id="aquaticUp" class="btn">↑</div>
-  <div id="aquaticDown" class="btn">↓</div>
-  <div id="aquaticLeft" class="btn">←</div>
-  <div id="aquaticRight" class="btn">→</div>
-
-  <!-- Emotes -->
-  <button id="emoteBtn">😺</button>
-  <div id="emoteMenu">
-    <button class="emote">😀</button>
-    <button class="emote">😡</button>
-    <button class="emote">😴</button>
-    <button class="emote">🐙</button>
-  </div>
-</div>
-
-<!-- Configurações -->
-<div id="settingsMenu">
-  <label>Skin:
-    <select id="skinSelect">
-      <option value="rikcat">Rikcat</option>
-      <option value="octopus">🐙 Polvo</option>
-    </select>
-  </label>
-  <label>Cor:
-    <input type="color" id="colorPicker" value="#FFB000">
-  </label>
-  <button id="settingsClose">Sair</button>
+    <!-- EMOTES -->
+    <button id="emoteBtn">😺</button>
+    <div id="emoteMenu">
+        <button class="emote">😀</button>
+        <button class="emote">😡</button>
+        <button class="emote">😴</button>
+    </div>
 </div>
 
 <script type="module" src="firebase.js"></script>
