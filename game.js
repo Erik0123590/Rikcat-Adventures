@@ -1,3 +1,10 @@
+const emoteBtn = document.getElementById("emoteBtn");
+const emoteMenu = document.getElementById("emoteMenu");
+
+emoteBtn.addEventListener("click", () => {
+  emoteMenu.style.display =
+    emoteMenu.style.display === "flex" ? "none" : "flex";
+});
 import { db, ref, set, onValue, onDisconnect } from "./firebase.js";
 
 const canvas = document.getElementById("canvas");
