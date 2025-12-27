@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Rikcat Adventure — Boa Online 0.3</title>
+<title>Rikcat Adventure</title>
 
 <style>
 body{
@@ -49,13 +49,9 @@ body{
   z-index:20;
 }
 
-#game{
-  display:none;
-}
+#game{ display:none; }
 
-canvas{
-  display:block;
-}
+canvas{ display:block; }
 
 /* BOTÕES */
 .btn{
@@ -65,22 +61,43 @@ canvas{
   background:rgba(255,255,255,0.35);
   border-radius:50%;
 }
-.btn:active{
-  transform:scale(0.9);
-  background:rgba(255,255,255,0.6);
-}
 
 /* P1 */
 #left{bottom:20px; left:20px;}
 #right{bottom:20px; left:110px;}
 #jump{bottom:20px; left:200px;}
-#attack{bottom:100px; left:110px;}
 
-/* P2 (online apenas visual) */
-#left2{bottom:20px; right:200px; display:none;}
-#right2{bottom:20px; right:110px; display:none;}
-#jump2{bottom:20px; right:20px; display:none;}
-#attack2{bottom:100px; right:110px; display:none;}
+/* P2 */
+#left2{bottom:20px; right:200px;}
+#right2{bottom:20px; right:110px;}
+#jump2{bottom:20px; right:20px;}
+
+/* EMOTES */
+#emoteBtn{
+  top:20px;
+  right:20px;
+  font-size:32px;
+  text-align:center;
+  line-height:70px;
+}
+
+#emoteMenu{
+  display:none;
+  position:fixed;
+  top:100px;
+  right:20px;
+  background:rgba(0,0,0,0.7);
+  padding:10px;
+  border-radius:10px;
+  z-index:50;
+}
+
+#emoteMenu button{
+  font-size:28px;
+  margin:5px;
+  background:none;
+  border:none;
+}
 </style>
 </head>
 
@@ -88,8 +105,8 @@ canvas{
 
 <div id="titleScreen">
   <h1>🐱 Rikcat Adventure</h1>
-  <button id="soloBtn">Solo</button>
-  <button id="multiBtn">Multiplayer Online</button>
+  <button id="soloBtn">Jogar Sozinho</button>
+  <button id="multiBtn">Multiplayer</button>
 </div>
 
 <div id="rotate">Vire o celular</div>
@@ -97,14 +114,26 @@ canvas{
 <div id="game">
   <canvas id="canvas"></canvas>
 
-  <!-- Rikcat -->
+  <!-- CONTROLES -->
   <div id="left" class="btn"></div>
   <div id="right" class="btn"></div>
   <div id="jump" class="btn"></div>
-  <div id="attack" class="btn"></div>
+
+  <div id="left2" class="btn"></div>
+  <div id="right2" class="btn"></div>
+  <div id="jump2" class="btn"></div>
+
+  <!-- EMOTES -->
+  <div id="emoteBtn" class="btn">😊</div>
+
+  <div id="emoteMenu">
+    <button class="emote">😺</button>
+    <button class="emote">😂</button>
+    <button class="emote">😡</button>
+    <button class="emote">❤️</button>
+  </div>
 </div>
 
-<script type="module" src="firebase.js"></script>
-<script type="module" src="game.js"></script>
+<script src="game.js"></script>
 </body>
 </html>
