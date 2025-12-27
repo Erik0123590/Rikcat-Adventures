@@ -2,249 +2,206 @@ import { db, ref, set, onValue, onDisconnect } from "./firebase.js";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
-const titleScreen = document.getElementById("titleScreen");
-const gameDiv = document.getElementById("game");
+
+// Elementos da Interface
+const screens = {
+    title: document.getElementById("titleScreen"),
+    config: document.getElementById("configScreen"),
+    game: document.getElementById("game"),
+    rotate: document.getElementById("rotate")
+};
 
 /* CONFIGURAÇÕES DE JOGO */
-const GRAVITY = 0.5;
-const FRICTION = 0.8;
-const JUMP_FORCE = -11;
+const GRAVITY = 0.6;
+const JUMP_FORCE = -12;
 const SPEED = 5;
+const FRICTION = 0.8;
 
 let playing = false;
 let onlineEnabled = false;
 let cameraX = 0;
-let inWater = false;
 
 /* PLAYER PRINCIPAL */
-const player = {
-    x: 100, y: 100, w: 40, h: 40,
+const rikcat = {
+    x: 100, y: 100, w: 32, h: 32,
     vx: 0, vy: 0, 
     onGround: false,
-    skin: "rikcat", // rikcat ou polvo
+    skin: "rikcat",
     color: "#FFB000",
-    emote: null,
-    emoteTimer: 0,
-    facing: 1 // 1 para direita, -1 para esquerda
+    emote: null
 };
 
-/* MULTIPLAYER CONFIG */
+/* MULTIPLAYER */
 const room = "online_salas_1";
 const playerId = "p_" + Math.floor(Math.random() * 99999);
 const onlinePlayers = {};
 const myRef = ref(db, `rooms/${room}/players/${playerId}`);
 
-/* MAPA E AMBIENTE */
+/* MAPA */
 const platforms = [
-    {x: 0, y: 500, w: 2000, h: 100}, // Chão principal
-    {x: 300, y: 380, w: 150, h: 20},
-    {x: 550, y: 280, w: 150, h: 20},
-    {x: 800, y: 200, w: 200, h: 20},
-    {x: 1100, y: 350, w: 200, h: 20}
+    {x: 0, y: () => canvas.height - 40, w: 3000, h: 40},
+    {x: 200, y: () => canvas.height - 130, w: 140, h: 20},
+    {x: 450, y: () => canvas.height - 220, w: 140, h: 20},
+    {x: 700, y: () => canvas.height - 300, w: 140, h: 20}
 ];
 
-const pipes = [
-    {x: 1400, y: 440, w: 60, h: 60, target: "water"}
-];
-
-/* INPUTS (TECLADO + MOBILE) */
+/* CONTROLES */
 const keys = {};
 window.onkeydown = e => keys[e.code] = true;
 window.onkeyup = e => keys[e.code] = false;
 
-const setupMobileBtn = (id, actionStart, actionEnd) => {
-    const btn = document.getElementById(id);
-    btn.ontouchstart = (e) => { e.preventDefault(); actionStart(); };
-    btn.ontouchend = (e) => { e.preventDefault(); actionEnd(); };
+const bindTouch = (id, code) => {
+    const el = document.getElementById(id);
+    el.ontouchstart = (e) => { e.preventDefault(); keys[code] = true; };
+    el.ontouchend = (e) => { e.preventDefault(); keys[code] = false; };
 };
+bindTouch("left", "ArrowLeft");
+bindTouch("right", "ArrowRight");
+bindTouch("jump", "Space");
 
-setupMobileBtn("left", () => keys["ArrowLeft"] = true, () => keys["ArrowLeft"] = false);
-setupMobileBtn("right", () => keys["ArrowRight"] = true, () => keys["ArrowRight"] = false);
-setupMobileBtn("jump", () => keys["Space"] = true, () => keys["Space"] = false);
-setupMobileBtn("attack", () => { player.skin = player.skin === "rikcat" ? "polvo" : "rikcat"; }, () => {});
+/* LÓGICA DE EMOTES COM PÁGINAS */
+const allEmotes = ["😀", "😡", "😴", "💎", "🔥", "⭐", "🤡", "👑", "🍕", "👻"];
+let currentEmotePage = 0;
+const emotesPerPage = 5;
 
-/* INICIAR JOGO */
-function startGame(online) {
-    onlineEnabled = online;
-    titleScreen.style.display = "none";
-    gameDiv.style.display = "block";
-    playing = true;
-    if(online) setupFirebase();
-    animate();
+function renderEmoteMenu() {
+    const grid = document.getElementById("emoteGrid");
+    grid.innerHTML = "";
+    const start = currentEmotePage * emotesPerPage;
+    const pageItems = allEmotes.slice(start, start + emotesPerPage);
+
+    pageItems.forEach(emoji => {
+        const btn = document.createElement("button");
+        btn.className = "emote";
+        btn.textContent = emoji;
+        btn.onclick = () => {
+            rikcat.emote = emoji;
+            document.getElementById("emoteMenu").style.display = "none";
+            setTimeout(() => rikcat.emote = null, 3000);
+        };
+        grid.appendChild(btn);
+    });
 }
 
+document.getElementById("nextEmotePage").onclick = () => {
+    currentEmotePage = (currentEmotePage + 1) % Math.ceil(allEmotes.length / emotesPerPage);
+    renderEmoteMenu();
+};
+
+document.getElementById("emoteBtn").onclick = () => {
+    const menu = document.getElementById("emoteMenu");
+    menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+    renderEmoteMenu();
+};
+
+/* CONFIGURAÇÕES */
+document.getElementById("configBtn").onclick = () => screens.config.style.display = "flex";
+document.getElementById("closeConfig").onclick = () => {
+    rikcat.skin = document.getElementById("skinSelect").value;
+    rikcat.color = document.getElementById("colorSelect").value;
+    screens.config.style.display = "none";
+};
+
+/* INÍCIO DO JOGO */
+function startGame(online) {
+    onlineEnabled = online;
+    screens.title.style.display = "none";
+    screens.game.style.display = "block";
+    playing = true;
+    if(online) {
+        onDisconnect(myRef).remove();
+        onValue(ref(db, `rooms/${room}/players`), snap => {
+            if(snap.val()) Object.assign(onlinePlayers, snap.val());
+        });
+    }
+    update();
+}
 document.getElementById("soloBtn").onclick = () => startGame(false);
 document.getElementById("multiBtn").onclick = () => startGame(true);
 
-function setupFirebase() {
-    onDisconnect(myRef).remove();
-    onValue(ref(db, `rooms/${room}/players`), snap => {
-        const data = snap.val();
-        if(data) {
-            Object.keys(onlinePlayers).forEach(k => delete onlinePlayers[k]);
-            Object.assign(onlinePlayers, data);
-        }
-    });
-}
-
-/* SISTEMA DE COLISÃO AABB */
-function checkCollisions() {
-    player.onGround = false;
-
-    platforms.forEach(p => {
-        // Colisão Vertical (Cima/Baixo)
-        if (player.x < p.x + p.w && player.x + player.w > p.x &&
-            player.y + player.h + player.vy > p.y && player.y + player.vy < p.y + p.h) {
-            
-            if (player.vy > 0) { // Caindo
-                player.y = p.y - player.h;
-                player.vy = 0;
-                player.onGround = true;
-            } else if (player.vy < 0) { // Pulando (bate a cabeça)
-                player.y = p.y + p.h;
-                player.vy = 0;
-            }
-        }
-
-        // Colisão Horizontal (Laterais)
-        if (player.x + player.vx < p.x + p.w && player.x + player.w + player.vx > p.x &&
-            player.y < p.y + p.h && player.y + player.h > p.y) {
-            player.vx = 0;
-        }
-    });
-}
-
-/* DESENHO DOS PERSONAGENS */
-function drawEntity(p) {
-    const renderX = p.x - cameraX;
-    const renderY = p.y;
-
+/* ARTE ORIGINAL */
+function drawPlayer(p) {
+    const x = p.x - cameraX + 16;
+    const y = p.y + 16;
     ctx.save();
-    if (p.skin === "rikcat") {
-        // Corpo simples do Rikcat
-        ctx.fillStyle = p.color || "#FFB000";
-        ctx.strokeStyle = "#000";
-        ctx.lineWidth = 2;
-        
+    ctx.translate(x, y);
+
+    if(p.skin === "rikcat"){
         // Orelhas
-        ctx.beginPath();
-        ctx.moveTo(renderX + 5, renderY);
-        ctx.lineTo(renderX + 15, renderY - 15);
-        ctx.lineTo(renderX + 20, renderY);
-        ctx.fill(); ctx.stroke();
-        
-        ctx.beginPath();
-        ctx.moveTo(renderX + p.w - 5, renderY);
-        ctx.lineTo(renderX + p.w - 15, renderY - 15);
-        ctx.lineTo(renderX + p.w - 20, renderY);
-        ctx.fill(); ctx.stroke();
-
-        // Cabeça/Corpo
-        ctx.fillRect(renderX, renderY, p.w, p.h);
-        ctx.strokeRect(renderX, renderY, p.w, p.h);
-
-        // Olhos
-        ctx.fillStyle = "black";
-        ctx.fillRect(renderX + 8, renderY + 12, 6, 8);
-        ctx.fillRect(renderX + p.w - 14, renderY + 12, 6, 8);
+        ctx.fillStyle=p.color; ctx.strokeStyle="#000"; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(-18,-2); ctx.lineTo(-40,-28); ctx.lineTo(-8,-22); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(18,-2); ctx.lineTo(40,-28); ctx.lineTo(8,-22); ctx.fill(); ctx.stroke();
+        // Cabeça
+        ctx.beginPath(); ctx.arc(0,6,26,0,Math.PI*2); ctx.fill(); ctx.stroke();
+        // Olhos e Rosto
+        ctx.fillStyle="#000"; ctx.fillRect(-8,0,4,14); ctx.fillRect(4,0,4,14);
+        ctx.fillStyle="#FF2FA3"; ctx.beginPath(); ctx.moveTo(0,14); ctx.lineTo(-6,22); ctx.lineTo(6,22); ctx.fill();
     } else {
-        // Desenho do Polvo
-        ctx.font = `${p.w}px serif`;
-        ctx.textBaseline = "top";
-        ctx.fillText("🐙", renderX, renderY);
+        ctx.font = "40px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("🐙", 0, 20);
     }
-
-    // Emote
-    if (p.emote) {
-        ctx.font = "20px Arial";
-        ctx.fillText(p.emote, renderX + 10, renderY - 25);
-    }
+    if(p.emote) { ctx.font="24px sans-serif"; ctx.textAlign="center"; ctx.fillText(p.emote, 0, -40); }
     ctx.restore();
 }
 
 /* LOOP PRINCIPAL */
-function animate() {
-    if (!playing) return;
-    requestAnimationFrame(animate);
+function update() {
+    if(!playing) return;
+    requestAnimationFrame(update);
 
-    // Reset Canvas
-    ctx.fillStyle = inWater ? "#3399FF" : "#6AA5FF";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Física Lateral
+    if (keys["ArrowLeft"]) rikcat.vx = -SPEED;
+    else if (keys["ArrowRight"]) rikcat.vx = SPEED;
+    else rikcat.vx *= FRICTION;
 
-    // Movimentação
-    if (keys["ArrowLeft"]) { player.vx = -SPEED; player.facing = -1; }
-    else if (keys["ArrowRight"]) { player.vx = SPEED; player.facing = 1; }
-    else { player.vx *= FRICTION; }
-
-    if ((keys["Space"] || keys["ArrowUp"]) && player.onGround) {
-        player.vy = JUMP_FORCE;
-        player.onGround = false;
+    // Pulo
+    if (keys["Space"] && rikcat.onGround) {
+        rikcat.vy = JUMP_FORCE;
+        rikcat.onGround = false;
     }
 
-    // Aplicar Gravidade
-    player.vy += GRAVITY;
-    
-    // Checar Colisões antes de mover
-    checkCollisions();
+    rikcat.vy += GRAVITY;
+    rikcat.x += rikcat.vx;
+    rikcat.y += rikcat.vy;
+    rikcat.onGround = false;
 
-    player.x += player.vx;
-    player.y += player.vy;
-
-    // Câmera Suave (Foco no centro)
-    let targetCamX = player.x - canvas.width / 2;
-    cameraX += (targetCamX - cameraX) * 0.1;
-    if (cameraX < 0) cameraX = 0;
-
-    // Desenhar Plataformas
-    ctx.fillStyle = "#8B4513";
+    // Colisão
     platforms.forEach(p => {
-        ctx.fillRect(p.x - cameraX, p.y, p.w, p.h);
-        ctx.strokeStyle = "#5D2E0C";
-        ctx.strokeRect(p.x - cameraX, p.y, p.w, p.h);
-    });
-
-    // Desenhar Canos
-    ctx.fillStyle = "#2ecc71";
-    pipes.forEach(pipe => {
-        ctx.fillRect(pipe.x - cameraX, pipe.y, pipe.w, pipe.h);
-        ctx.strokeRect(pipe.x - cameraX, pipe.y, pipe.w, pipe.h);
-    });
-
-    // Desenhar Outros Jogadores
-    if (onlineEnabled) {
-        // Enviar dados
-        set(myRef, {
-            x: player.x, y: player.y, 
-            skin: player.skin, color: player.color, 
-            emote: player.emote
-        });
-
-        for (let id in onlinePlayers) {
-            if (id !== playerId) drawEntity(onlinePlayers[id]);
+        const py = p.y();
+        if (rikcat.x < p.x + p.w && rikcat.x + rikcat.w > p.x &&
+            rikcat.y + rikcat.h > py && rikcat.y + rikcat.h < py + p.h && rikcat.vy > 0) {
+            rikcat.y = py - rikcat.h;
+            rikcat.vy = 0;
+            rikcat.onGround = true;
         }
-    }
+    });
 
-    // Desenhar Meu Jogador
-    drawEntity(player);
+    // Respawn
+    if (rikcat.y > canvas.height + 100) { rikcat.x = 100; rikcat.y = 100; rikcat.vy = 0; }
+
+    // Câmera
+    cameraX = rikcat.x - canvas.width / 2;
+    if(cameraX < 0) cameraX = 0;
+
+    // Desenho
+    ctx.fillStyle = "#6AA5FF";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.fillStyle = "#8B4513";
+    platforms.forEach(p => ctx.fillRect(p.x - cameraX, p.y(), p.w, p.h));
+
+    if (onlineEnabled) {
+        set(myRef, { x: rikcat.x, y: rikcat.y, skin: rikcat.skin, color: rikcat.color, emote: rikcat.emote });
+        for (let id in onlinePlayers) if (id !== playerId) drawPlayer(onlinePlayers[id]);
+    }
+    drawPlayer(rikcat);
 }
 
-/* EMOTES LOGIC */
-const emoteBtn = document.getElementById("emoteBtn");
-const emoteMenu = document.getElementById("emoteMenu");
-emoteBtn.onclick = () => emoteMenu.style.display = emoteMenu.style.display === "flex" ? "none" : "flex";
-
-document.querySelectorAll(".emote").forEach(btn => {
-    btn.onclick = () => {
-        player.emote = btn.textContent;
-        emoteMenu.style.display = "none";
-        setTimeout(() => { player.emote = null; }, 3000); // Emote some após 3s
-    };
-});
-
-/* AJUSTE DE TELA */
 function resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    screens.rotate.style.display = innerHeight > innerWidth ? "flex" : "none";
 }
-window.addEventListener("resize", resize);
+window.onresize = resize;
 resize();
