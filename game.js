@@ -107,33 +107,33 @@ function drawRikcat(x, y, scale = 1, bodyColor = "#FFA500") {
   ctx.scale(scale, scale);
 
   const outline = "#000";
-  const earInside = "#FFB347"; // dentro da orelha (laranja claro)
-  const noseColor = "#FF4FA3"; // rosa
-  const mouthColor = "#000";
+  const earInside = "#FFB347";
+  const noseColor = "#FF4FA3";
+
+  ctx.lineWidth = 2;
 
   // 🟠 Cabeça
   ctx.fillStyle = bodyColor;
   ctx.strokeStyle = outline;
-  ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.arc(0, 0, 16, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
-  // 👂 Orelha esquerda
+  // 👂 Orelha esquerda (MESMA direção, só mais próxima)
   ctx.beginPath();
-  ctx.moveTo(-18, -10);
-  ctx.lineTo(-30, -28);
-  ctx.lineTo(-10, -24);
+  ctx.moveTo(-10, -10);
+  ctx.lineTo(-22, -26);
+  ctx.lineTo(-4, -22);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  // 👂 Orelha direita
+  // 👂 Orelha direita (MESMA direção, só mais próxima)
   ctx.beginPath();
-  ctx.moveTo(18, -10);
-  ctx.lineTo(30, -28);
-  ctx.lineTo(10, -24);
+  ctx.moveTo(10, -10);
+  ctx.lineTo(22, -26);
+  ctx.lineTo(4, -22);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
@@ -141,28 +141,26 @@ function drawRikcat(x, y, scale = 1, bodyColor = "#FFA500") {
   // 👂 Dentro da orelha esquerda
   ctx.fillStyle = earInside;
   ctx.beginPath();
-  ctx.moveTo(-18, -14);
-  ctx.lineTo(-26, -24);
-  ctx.lineTo(-14, -22);
+  ctx.moveTo(-10, -12);
+  ctx.lineTo(-18, -22);
+  ctx.lineTo(-6, -20);
   ctx.closePath();
   ctx.fill();
 
   // 👂 Dentro da orelha direita
   ctx.beginPath();
-  ctx.moveTo(18, -14);
-  ctx.lineTo(26, -24);
-  ctx.lineTo(14, -22);
+  ctx.moveTo(10, -12);
+  ctx.lineTo(18, -22);
+  ctx.lineTo(6, -20);
   ctx.closePath();
   ctx.fill();
 
-  // 👁 Olho esquerdo
+  // 👁 Olhos
   ctx.fillStyle = "#000";
   ctx.fillRect(-6, -4, 3, 8);
-
-  // 👁 Olho direito
   ctx.fillRect(3, -4, 3, 8);
 
-  // 👃 Nariz COM contorno
+  // 👃 Nariz com contorno
   ctx.fillStyle = noseColor;
   ctx.strokeStyle = outline;
   ctx.beginPath();
@@ -173,9 +171,8 @@ function drawRikcat(x, y, scale = 1, bodyColor = "#FFA500") {
   ctx.fill();
   ctx.stroke();
 
-  // 👄 Boca (agora EXISTE 😼)
-  ctx.strokeStyle = mouthColor;
-  ctx.lineWidth = 2;
+  // 👄 Boca
+  ctx.strokeStyle = outline;
   ctx.beginPath();
   ctx.moveTo(-5, 10);
   ctx.quadraticCurveTo(0, 13, 5, 10);
