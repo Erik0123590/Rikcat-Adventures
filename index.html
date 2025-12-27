@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Rikcat Adventure — Online Salas 1</title>
-
+<title>Rikcat Adventure — Salas Online</title>
 <style>
 body{
   margin:0;
@@ -33,6 +32,25 @@ body{
   font-size:22px;
   padding:12px 30px;
   border-radius:10px;
+  border:none;
+  cursor:pointer;
+}
+
+/* CONFIGURAÇÕES */
+#configScreen{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:20px;
+}
+#configScreen label{
+  color:white;
+  font-size:18px;
+}
+#configScreen select, #configScreen input[type=color], #configScreen input[type=text]{
+  padding:5px;
+  font-size:16px;
+  border-radius:5px;
   border:none;
 }
 
@@ -80,7 +98,6 @@ canvas{ display:block; }
   font-size:26px;
   z-index:30;
 }
-
 #emoteMenu{
   position:fixed;
   top:60px;
@@ -93,31 +110,9 @@ canvas{ display:block; }
   border-radius:10px;
   z-index:30;
 }
-
 .emote{
   font-size:22px;
-}
-
-/* CONFIGURAÇÕES */
-#settingsBtn{
-  position:fixed;
-  top:15px;
-  right:60px;
-  font-size:26px;
-  z-index:30;
-}
-#settingsMenu{
-  position:fixed;
-  top:60px;
-  right:60px;
-  display:none;
-  flex-direction:column;
-  gap:8px;
-  background:rgba(0,0,0,0.6);
-  padding:10px;
-  border-radius:10px;
-  z-index:30;
-  color:white;
+  cursor:pointer;
 }
 </style>
 </head>
@@ -126,8 +121,25 @@ canvas{ display:block; }
 
 <div id="titleScreen">
   <h1>🐱 Rikcat Adventure</h1>
+  
+  <!-- Botões para iniciar -->
   <button id="soloBtn">Solo</button>
   <button id="multiBtn">Multiplayer Online</button>
+
+  <!-- CONFIGURAÇÕES -->
+  <div id="configScreen">
+    <label for="skinSelect">Skin:</label>
+    <select id="skinSelect">
+      <option value="rikcat">Rikcat 🐱</option>
+      <option value="polvo">Polvo 🐙</option>
+    </select>
+
+    <label for="colorSelect">Cor (Rikcat):</label>
+    <input type="color" id="colorSelect" value="#FFB000">
+
+    <label for="roomInput">Sala:</label>
+    <input type="text" id="roomInput" placeholder="Digite o nome da sala">
+  </div>
 </div>
 
 <div id="rotate">Vire o celular</div>
@@ -135,6 +147,7 @@ canvas{ display:block; }
 <div id="game">
   <canvas id="canvas"></canvas>
 
+  <!-- BOTÕES -->
   <div id="left" class="btn"></div>
   <div id="right" class="btn"></div>
   <div id="jump" class="btn"></div>
@@ -143,26 +156,9 @@ canvas{ display:block; }
   <!-- EMOTES -->
   <button id="emoteBtn">😺</button>
   <div id="emoteMenu">
-    <button class="emote">😸</button>
-    <button class="emote">😾</button>
-    <button class="emote">😻</button>
-    <button class="emote">😼</button>
-    <button class="emote">🙀</button>
-    <button class="emote">😿</button>
-    <button class="emote">👍</button>
-    <button class="emote">👎</button>
-  </div>
-
-  <!-- CONFIGURAÇÕES -->
-  <button id="settingsBtn">⚙️</button>
-  <div id="settingsMenu">
-    <label>Escolha a Skin:</label>
-    <select id="skinSelect">
-      <option value="rikcat">Rikcat 🐱</option>
-      <option value="polvo">Polvo 🐙</option>
-    </select>
-    <label>Cor do Corpo:</label>
-    <input type="color" id="bodyColor" value="#FFB000">
+    <button class="emote">😀</button>
+    <button class="emote">😡</button>
+    <button class="emote">😴</button>
   </div>
 </div>
 
