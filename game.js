@@ -180,39 +180,66 @@ function drawRikcat(x,y,color="#FFB000",emote=null){
 }
 
 /* DESENHO POLVO */
-function drawPolvo(x,y,scale=1,emote=null){
+function drawPolvo(x, y, scale = 1, bodyColor = "#FF69B4", eyeColor = "#000") {
   ctx.save();
-  ctx.translate(x,y);
-  ctx.scale(scale,scale);
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
 
-  ctx.fillStyle="#ff77cc"; // corpo
-  ctx.fillRect(0,0,26,26);
-  ctx.fillStyle="#e655b8"; // sombra
-  ctx.fillRect(18,0,8,8);
+  const outline = "#000";
 
-  // tentáculos
-  ctx.fillStyle="#ff77cc";
-  ctx.fillRect(2,24,6,6);
-  ctx.fillRect(8,24,6,6);
-  ctx.fillRect(14,24,6,6);
-  ctx.fillRect(20,24,6,6);
+  ctx.lineWidth = 3;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
 
-  // olhos
-  ctx.fillStyle="#fff";
-  ctx.fillRect(6,8,4,4);
-  ctx.fillRect(16,8,4,4);
-  ctx.fillStyle="#000";
-  ctx.fillRect(7,9,2,2);
-  ctx.fillRect(17,9,2,2);
+  // 👁 Corpo principal (cabeça)
+  ctx.fillStyle = bodyColor;
+  ctx.strokeStyle = outline;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 30, 25, 0, 0, Math.PI * 2); // cabeça oval
+  ctx.fill();
+  ctx.stroke();
 
-  if(emote){
-    ctx.font="20px sans-serif";
-    ctx.fillText(emote,0,-10);
+  // 👂 Tentáculos (arredondados e curvos)
+  ctx.beginPath();
+  ctx.moveTo(-20, 20);
+  ctx.quadraticCurveTo(-25, 40, -10, 50);
+  ctx.quadraticCurveTo(-5, 55, 0, 50);
+  ctx.quadraticCurveTo(5, 45, 10, 50);
+  ctx.quadraticCurveTo(20, 55, 25, 40);
+  ctx.strokeStyle = outline;
+  ctx.stroke();
+
+  // Tentáculos extras (simples curvas)
+  for (let i = -15; i <= 15; i += 15) {
+    ctx.beginPath();
+    ctx.moveTo(i, 20);
+    ctx.quadraticCurveTo(i - 5, 35, i, 40);
+    ctx.stroke();
   }
+
+  // 👁 Olhos
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.arc(-10, -5, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(10, -5, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = eyeColor;
+  ctx.beginPath();
+  ctx.arc(-10, -5, 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(10, -5, 2, 0, Math.PI * 2);
+  ctx.fill();
 
   ctx.restore();
 }
-
 /* LOOP */
 function update(){
   requestAnimationFrame(update);
