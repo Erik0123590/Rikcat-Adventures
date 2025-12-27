@@ -3,51 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Rikcat Adventures v1</title>
+<title>Rikcat Adventure — Salas Online v1</title>
 
 <style>
-body{
-  margin:0;
-  overflow:hidden;
-  background:#6aa5ff;
-  font-family:sans-serif;
-}
+body{ margin:0; overflow:hidden; background:#6aa5ff; font-family:sans-serif; }
 
 /* TELA DE TÍTULO */
 #titleScreen{
-  position:fixed;
-  inset:0;
-  background:#6aa5ff;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:15px;
-  z-index:10;
+  position:fixed; inset:0; background:#6aa5ff;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:15px; z-index:10;
 }
-#titleScreen h1{
-  color:white;
-  font-size:42px;
-}
-#titleScreen button{
-  font-size:22px;
-  padding:12px 30px;
-  border-radius:10px;
-  border:none;
-  cursor:pointer;
-}
+#titleScreen h1{ color:white; font-size:42px; }
+#titleScreen button{ font-size:22px; padding:12px 30px; border-radius:10px; border:none; }
 
 /* ROTATE */
 #rotate{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:black;
-  color:white;
-  font-size:30px;
-  align-items:center;
-  justify-content:center;
-  z-index:20;
+  display:none; position:fixed; inset:0; background:black;
+  color:white; font-size:30px; align-items:center; justify-content:center; z-index:20;
 }
 
 /* GAME */
@@ -55,104 +27,82 @@ body{
 canvas{ display:block; }
 
 /* BOTÕES */
-.btn{
-  position:fixed;
-  width:70px;
-  height:70px;
-  background:rgba(255,255,255,0.35);
-  border-radius:50%;
-}
-.btn:active{
-  transform:scale(0.9);
-  background:rgba(255,255,255,0.6);
-}
+.btn{ position:fixed; width:70px; height:70px; background:rgba(255,255,255,0.35); border-radius:50%; }
+.btn:active{ transform:scale(0.9); background:rgba(255,255,255,0.6); }
 
-/* CONTROLES */
+/* CONTROLES PADRÃO */
 #left{bottom:20px; left:20px;}
 #right{bottom:20px; left:110px;}
-#jump{bottom:20px; left:200px;}
-#attack{bottom:100px; left:110px;}
+#up{bottom:20px; left:200px;}
+#down{bottom:100px; left:110px;}
+#attack{bottom:100px; left:200px;}
 
 /* EMOTES */
-#emoteBtn{
-  position:fixed;
-  top:15px;
-  right:15px;
-  font-size:26px;
-  z-index:30;
-}
+#emoteBtn{ position:fixed; top:15px; right:15px; font-size:26px; z-index:30; }
 #emoteMenu{
-  position:fixed;
-  top:60px;
-  right:15px;
-  display:none;
-  flex-direction:column;
-  gap:8px;
-  background:rgba(0,0,0,0.6);
-  padding:10px;
-  border-radius:10px;
-  z-index:30;
+  position:fixed; top:60px; right:15px; display:none; flex-direction:column;
+  gap:8px; background:rgba(0,0,0,0.6); padding:10px; border-radius:10px; z-index:30;
 }
-.emote{
-  font-size:22px;
-  cursor:pointer;
-}
+.emote{ font-size:22px; }
 
 /* CONFIGURAÇÕES */
 #configMenu{
-  display:none;
-  flex-direction:column;
-  gap:12px;
-  background:rgba(255,255,255,0.9);
-  padding:20px;
-  border-radius:12px;
-  position:fixed;
-  inset:20px;
-  z-index:40;
+  position:fixed; inset:0; display:none; background:rgba(0,0,0,0.9);
+  flex-direction:column; align-items:center; justify-content:center; gap:15px; color:white; z-index:50;
 }
+#configMenu label{ font-size:20px; margin-right:10px; }
+#configMenu select,input[type=color]{ font-size:18px; padding:5px; }
+#configMenu button{ font-size:20px; padding:10px 20px; }
 </style>
 </head>
 
 <body>
-
 <div id="titleScreen">
-  <h1>🐱 Rikcat Adventures</h1>
+  <h1>🐱 Rikcat Adventure</h1>
   <button id="soloBtn">Solo</button>
-  <button id="multiBtn">Salas Online</button>
-  <button id="configBtn">Configurações</button>
+  <button id="multiBtn">Multiplayer Online</button>
+  <button id="configBtn">⚙️ Configurações</button>
 </div>
 
 <div id="rotate">Vire o celular</div>
+
+<!-- MENU DE CONFIGURAÇÕES -->
+<div id="configMenu">
+  <div>
+    <label>Skin:</label>
+    <select id="skinSelect">
+      <option value="rikcat">Rikcat</option>
+      <option value="octopus">🐙 Polvo</option>
+    </select>
+  </div>
+  <div>
+    <label>Cor:</label>
+    <input type="color" id="colorPicker" value="#FFB000">
+  </div>
+  <button id="configBackBtn">Voltar</button>
+</div>
 
 <div id="game">
   <canvas id="canvas"></canvas>
 
   <div id="left" class="btn"></div>
   <div id="right" class="btn"></div>
-  <div id="jump" class="btn"></div>
+  <div id="up" class="btn"></div>
+  <div id="down" class="btn"></div>
   <div id="attack" class="btn"></div>
 
   <!-- EMOTES -->
   <button id="emoteBtn">😺</button>
   <div id="emoteMenu">
-    <button class="emote">😀</button>
-    <button class="emote">😡</button>
+    <button class="emote">😸</button>
+    <button class="emote">😾</button>
     <button class="emote">😴</button>
+    <button class="emote">😼</button>
+    <button class="emote">😹</button>
+    <button class="emote">🧡</button>
+    <button class="emote">💜</button>
+    <button class="emote">💘</button>
   </div>
-</div>
-
-<!-- CONFIGURAÇÕES -->
-<div id="configMenu">
-  <label>Skin:
-    <select id="skinSelect">
-      <option value="rikcat">Rikcat</option>
-      <option value="polvo">🐙 Polvo</option>
-    </select>
-  </label>
-  <label>Cor:
-    <input type="color" id="colorSelect" value="#FFB000">
-  </label>
-  <button id="exitConfig">Sair</button>
 </div>
 
 <script type="module" src="firebase.js"></script>
