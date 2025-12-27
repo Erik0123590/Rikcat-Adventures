@@ -1,34 +1,38 @@
 import { db, ref, set, onValue, onDisconnect } from "./firebase.js";
 
+/* ==================== CANVAS E CONTROLES ==================== */
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 const titleScreen = document.getElementById("titleScreen");
 const soloBtn = document.getElementById("soloBtn");
 const multiBtn = document.getElementById("multiBtn");
+const configBtn = document.getElementById("configBtn");
 const gameDiv = document.getElementById("game");
 const rotate = document.getElementById("rotate");
 
-/* CONTROLES */
+/* BOTÕES DE CONTROLE */
 const left  = document.getElementById("left");
 const right = document.getElementById("right");
-const jump  = document.getElementById("jump");
+const up    = document.getElementById("jump");
+const down  = document.getElementById("down");
 const attack= document.getElementById("attack");
 
 /* EMOTES */
 const emoteBtn = document.getElementById("emoteBtn");
 const emoteMenu = document.getElementById("emoteMenu");
 
-/* ONLINE */
-const room = "online_salas_1";
+/* CONFIGURAÇÕES */
+let selectedSkin = "rikcat"; // ou "polvo"
+let selectedColor = "#FFB000";
+
+/* ==================== ONLINE ==================== */
+const room = "salas_online_1";
 const playerId = "p_" + Math.floor(Math.random()*99999);
 let onlineEnabled = false;
 const onlinePlayers = {};
 
-/* CAMERA */
-let cameraX = 0;
-
-/* RESIZE */
+/* ==================== RESIZE ==================== */
 function resize(){
   canvas.width = innerWidth;
   canvas.height = innerHeight;
@@ -36,104 +40,100 @@ function resize(){
 addEventListener("resize", resize);
 resize();
 
-/* ORIENTAÇÃO */
+/* ==================== ORIENTAÇÃO ==================== */
 function checkOrientation(){
   rotate.style.display = innerHeight > innerWidth ? "flex" : "none";
 }
 addEventListener("resize", checkOrientation);
 checkOrientation();
 
-/* START */
+/* ==================== INICIALIZAÇÃO ==================== */
 let playing=false;
 function startGame(online){
   onlineEnabled = online;
   titleScreen.style.display="none";
   gameDiv.style.display="block";
   playing=true;
+
+  if(onlineEnabled){
+    const myRef = ref(db, `rooms/${room}/players/${playerId}`);
+    onDisconnect(myRef).remove();
+
+    onValue(ref(db, `rooms/${room}/players`), snap=>{
+      Object.keys(onlinePlayers).forEach(k=>delete onlinePlayers[k]);
+      if(snap.val()) Object.assign(onlinePlayers, snap.val());
+    });
+  }
 }
+
 soloBtn.onclick=()=>startGame(false);
 multiBtn.onclick=()=>startGame(true);
 
-/* PLAYER */
+/* ==================== PLAYER ==================== */
 const rikcat={
-  x:80,y:0,w:32,h:32,
-  vx:0,vy:0,onGround:false,
-  life:3,attacking:false,
-  emotes:[],
-  skin:"rikcat",
-  color:"#FFB000"
+  x:80, y:0, w:32, h:32,
+  vx:0, vy:0, onGround:false,
+  life:3, attacking:false, emote:null,
+  skin:selectedSkin, color:selectedColor
 };
 
-/* FIREBASE */
-const myRef = ref(db, `rooms/${room}/players/${playerId}`);
-onDisconnect(myRef).remove();
+/* ==================== MAPA ==================== */
+const platforms=[
+  {x:0, y:()=>canvas.height-40, w:3000, h:40},
+  {x:200, y:()=>canvas.height-120, w:140, h:20},
+  {x:420, y:()=>canvas.height-200, w:140, h:20},
+  {x:650, y:()=>canvas.height-260, w:140, h:20},
+];
 
-onValue(ref(db,`rooms/${room}/players`), snap=>{
-  Object.keys(onlinePlayers).forEach(k=>delete onlinePlayers[k]);
-  if(snap.val()) Object.assign(onlinePlayers,snap.val());
-});
+/* Cano para fase aquática */
+const pipeEntrance = {x:900, y:canvas.height-80, w:40, h:40};
+const pipeExit = {x:0, y:canvas.height-40, w:40, h:40};
 
-/* CONTROLES */
+/* ==================== CONTROLES ==================== */
 left.ontouchstart=()=>rikcat.vx=-4;
 right.ontouchstart=()=>rikcat.vx=4;
-jump.ontouchstart=()=>{
+up.ontouchstart=()=>{
   if(rikcat.onGround){
     rikcat.vy=-12;
     rikcat.onGround=false;
   }
 };
+down.ontouchstart=()=>{ /* futuro: aquático */ };
 attack.ontouchstart=()=>rikcat.attacking=true;
-[left,right,jump,attack].forEach(b=>b.ontouchend=()=>{
+
+[left,right,up,down,attack].forEach(b=>b.ontouchend=()=>{
   rikcat.vx=0;
+  rikcat.vy=rikcat.vy; // mantém vertical
   rikcat.attacking=false;
 });
 
-/* EMOTES */
+/* ==================== EMOTES ==================== */
 if(emoteBtn && emoteMenu){
   emoteBtn.onclick=()=>{
-    emoteMenu.style.display =
-      emoteMenu.style.display==="flex"?"none":"flex";
+    emoteMenu.style.display = emoteMenu.style.display==="flex"?"none":"flex";
   };
-
   document.querySelectorAll(".emote").forEach(btn=>{
     btn.onclick=()=>{
-      rikcat.emotes.push({text: btn.textContent, timer:120});
+      rikcat.emote = btn.textContent;
       emoteMenu.style.display="none";
     };
   });
 }
 
-/* MAPA */
-const platforms=[
-  {x:0,y:()=>canvas.height-40,w:5000,h:40},
-  {x:200,y:()=>canvas.height-120,w:140,h:20},
-  {x:420,y:()=>canvas.height-200,w:140,h:20},
-  {x:650,y:()=>canvas.height-260,w:140,h:20},
-  {x:900,y:()=>canvas.height-180,w:200,h:20},
-  {x:1200,y:()=>canvas.height-120,w:300,h:20}
-];
-
-/* INIMIGOS */
-const enemies = [
-  {x:300,y:canvas.height-60,w:32,h:32,vx:2},
-  {x:800,y:canvas.height-280,w:32,h:32,vx:-1.5}
-];
-
-/* RIKCAT & POLVO */
-function drawPlayer(player){
+/* ==================== DESENHO DO PERSONAGEM ==================== */
+function drawCharacter(player){
   ctx.save();
-  ctx.translate(player.x - cameraX, player.y);
+  ctx.translate(player.x, player.y);
   ctx.scale(1,1);
 
-  // Skin
-  if(player.skin==="rikcat"){
-    const outline="#000";
-    const earInside="#FF2FA3";
-    const noseColor="#FF2FA3";
-    ctx.lineWidth=4;
+  const outline="#000";
+  const earInside="#FF2FA3";
+  const noseColor="#FF2FA3";
+  const color = player.color;
 
+  if(player.skin==="rikcat"){
     // ORELHAS
-    ctx.fillStyle=player.color; ctx.strokeStyle=outline;
+    ctx.fillStyle=color; ctx.strokeStyle=outline;
     ctx.beginPath();
     ctx.moveTo(-18,-2); ctx.lineTo(-40,-28); ctx.lineTo(-8,-22);
     ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -142,7 +142,7 @@ function drawPlayer(player){
     ctx.moveTo(-20,-8); ctx.lineTo(-32,-22); ctx.lineTo(-14,-18);
     ctx.closePath(); ctx.fill();
 
-    ctx.fillStyle=player.color;
+    ctx.fillStyle=color;
     ctx.beginPath();
     ctx.moveTo(18,-2); ctx.lineTo(40,-28); ctx.lineTo(8,-22);
     ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -152,8 +152,9 @@ function drawPlayer(player){
     ctx.closePath(); ctx.fill();
 
     // CABEÇA
-    ctx.fillStyle=player.color;
-    ctx.beginPath(); ctx.arc(0,6,26,0,Math.PI*2);
+    ctx.fillStyle=color;
+    ctx.beginPath();
+    ctx.arc(0,6,26,0,Math.PI*2);
     ctx.fill(); ctx.stroke();
 
     // OLHOS
@@ -174,83 +175,112 @@ function drawPlayer(player){
     ctx.moveTo(0,28);
     ctx.quadraticCurveTo(4,30,6,28);
     ctx.stroke();
+
   } else if(player.skin==="polvo"){
-    ctx.font="50px serif";
-    ctx.fillText("🐙", -25, 0);
+    ctx.font="48px serif";
+    ctx.fillText("🐙",-12,-4);
   }
 
-  // EMOTES
-  player.emotes.forEach((e, i)=>{
+  // EMOTE
+  if(player.emote){
     ctx.font="24px sans-serif";
-    ctx.fillText(e.text, (i>5 ? (i-5)*30 : 0) - 10, -35);
-    e.timer--;
-  });
-  player.emotes = player.emotes.filter(e=>e.timer>0);
+    ctx.fillText(player.emote,-10,-35);
+  }
 
   ctx.restore();
 }
 
-/* LOOP */
+/* ==================== LOOP PRINCIPAL ==================== */
+let cameraX=0, cameraY=0;
+
 function update(){
   requestAnimationFrame(update);
   if(!playing) return;
 
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  // física
+  rikcat.vy += 0.6; // gravidade
+  rikcat.x += rikcat.vx;
+  rikcat.y += rikcat.vy;
 
-  // CAMERA
-  cameraX = rikcat.x - canvas.width/2;
-  if(cameraX<0) cameraX=0;
+  rikcat.onGround = false;
 
-  // FÍSICA
-  rikcat.vy+=0.6;
-  rikcat.x+=rikcat.vx;
-  rikcat.y+=rikcat.vy;
-  rikcat.onGround=false;
-
-  // PLATAFORMAS
+  // colisões com plataformas
   platforms.forEach(p=>{
-    const py=p.y();
-    ctx.fillStyle="#8B4513";
-    ctx.fillRect(p.x - cameraX, py, p.w, p.h);
-
-    if(
-      rikcat.x < p.x+p.w &&
-      rikcat.x+rikcat.w > p.x &&
-      rikcat.y+rikcat.h > py &&
-      rikcat.y+rikcat.h < py+p.h &&
-      rikcat.vy>0
-    ){
-      rikcat.y=py-rikcat.h;
-      rikcat.vy=0;
-      rikcat.onGround=true;
+    const py = p.y();
+    if(rikcat.x + rikcat.w > p.x && rikcat.x < p.x + p.w){
+      // colisão descendo
+      if(rikcat.vy>0 && rikcat.y + rikcat.h > py && rikcat.y + rikcat.h < py + p.h){
+        rikcat.y = py - rikcat.h;
+        rikcat.vy = 0;
+        rikcat.onGround = true;
+      }
+      // colisão subindo
+      if(rikcat.vy<0 && rikcat.y < py + p.h && rikcat.y > py){
+        rikcat.y = py + p.h;
+        rikcat.vy = 0;
+      }
     }
   });
 
-  // INIMIGOS
-  enemies.forEach(e=>{
-    e.x += e.vx;
-    if(e.x<0 || e.x>5000) e.vx*=-1; // limites
-    ctx.fillStyle="red";
-    ctx.fillRect(e.x-cameraX, e.y, e.w, e.h);
+  // colisão com teto
+  if(rikcat.y < 0){ rikcat.y=0; rikcat.vy=0; }
+
+  // colisão com cano para fase aquática
+  if(rikcat.x + rikcat.w > pipeEntrance.x && rikcat.x < pipeEntrance.x + pipeEntrance.w &&
+     rikcat.y + rikcat.h > pipeEntrance.y && rikcat.y < pipeEntrance.y + pipeEntrance.h){
+       // só ativa se atacando
+       if(rikcat.attacking){
+         rikcat.x = pipeExit.x;
+         rikcat.y = pipeExit.y - rikcat.h;
+         rikcat.vx = 0;
+         rikcat.vy = 0;
+       }
+  }
+
+  // CÂMERA
+  cameraX = rikcat.x - canvas.width/2 + rikcat.w/2;
+  cameraY = rikcat.y - canvas.height/2 + rikcat.h/2;
+
+  ctx.setTransform(1,0,0,1,0,0); // reset
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.translate(-cameraX,-cameraY);
+
+  // fundo
+  ctx.fillStyle = "#6aa5ff";
+  ctx.fillRect(cameraX, cameraY, canvas.width, canvas.height);
+
+  // plataformas
+  ctx.fillStyle = "#8B4513";
+  platforms.forEach(p=>{
+    const py = p.y();
+    ctx.fillRect(p.x, py, p.w, p.h);
   });
 
-  // PLAYER PRINCIPAL
-  drawPlayer(rikcat);
+  // cano
+  ctx.fillStyle="blue";
+  ctx.fillRect(pipeEntrance.x,pipeEntrance.y,pipeEntrance.w,pipeEntrance.h);
 
-  // ONLINE
+  // desenhar player
+  drawCharacter(rikcat);
+
+  // multiplayer
   if(onlineEnabled){
+    const myRef = ref(db, `rooms/${room}/players/${playerId}`);
     set(myRef,{
       x:rikcat.x,
       y:rikcat.y,
-      skin: rikcat.skin,
-      color: rikcat.color,
-      emotes: rikcat.emotes
+      vx:rikcat.vx,
+      vy:rikcat.vy,
+      emote:rikcat.emote,
+      skin:rikcat.skin,
+      color:rikcat.color
     });
 
     for(const id in onlinePlayers){
       if(id===playerId) continue;
-      drawPlayer(onlinePlayers[id]);
+      drawCharacter(onlinePlayers[id]);
     }
   }
 }
+
 update();
