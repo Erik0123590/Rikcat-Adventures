@@ -19,15 +19,15 @@ const attack= document.getElementById("attack");
 /* EMOTES */
 const emoteBtn = document.getElementById("emoteBtn");
 const emoteMenu = document.getElementById("emoteMenu");
+const emotePages = document.getElementById("emotePages");
+const prevEmote = document.getElementById("prevEmote");
+const nextEmote = document.getElementById("nextEmote");
 
 /* ONLINE */
-const room = "online_emotes_3";
+const room = "online_emotes_4";
 const playerId = "p_" + Math.floor(Math.random()*99999);
 let onlineEnabled = false;
 const onlinePlayers = {};
-
-/* CORES */
-const playerColors = ["#FFB000", "#A020F0", "#2ECC71"];
 
 /* RESIZE */
 function resize(){
@@ -59,7 +59,6 @@ multiBtn.onclick=()=>startGame(true);
 const rikcat={
   x:80,y:0,w:32,h:32,
   vx:0,vy:0,onGround:false,
-  life:3,attacking:false,
   emote:null
 };
 
@@ -81,23 +80,62 @@ jump.ontouchstart=()=>{
     rikcat.onGround=false;
   }
 };
-attack.ontouchstart=()=>rikcat.attacking=true;
-[left,right,jump,attack].forEach(b=>b.ontouchend=()=>{
-  rikcat.vx=0;
-  rikcat.attacking=false;
-});
+attack.ontouchstart=()=>{};
+[left,right,jump,attack].forEach(b=>b.ontouchend=()=>rikcat.vx=0);
 
 /* EMOTES */
 emoteBtn.onclick=()=>{
   emoteMenu.style.display =
-    emoteMenu.style.display==="flex"?"none":"flex";
+    emoteMenu.style.display==="block"?"none":"block";
 };
-document.querySelectorAll(".emote").forEach(btn=>{
-  btn.onclick=()=>{
-    rikcat.emote = btn.textContent;
-    emoteMenu.style.display="none";
-  };
-});
+
+/* LISTA DE EMOTES */
+const emotes=[
+  "😀","😡","😴","😂","😭",
+  "😎","🥳","😱","❤️","🔥",
+  "👍","👎"
+];
+
+const EMOTES_PER_PAGE=5;
+let currentPage=0;
+
+for(let i=0;i<emotes.length;i+=EMOTES_PER_PAGE){
+  const page=document.createElement("div");
+  page.className="emotePage";
+
+  emotes.slice(i,i+EMOTES_PER_PAGE).forEach(e=>{
+    const btn=document.createElement("button");
+    btn.className="emote";
+    btn.textContent=e;
+    btn.onclick=()=>{
+      rikcat.emote=e;
+      emoteMenu.style.display="none";
+    };
+    page.appendChild(btn);
+  });
+
+  emotePages.appendChild(page);
+}
+
+const totalPages=Math.ceil(emotes.length/EMOTES_PER_PAGE);
+
+function updateEmotePage(){
+  emotePages.style.transform=
+    `translateX(${-currentPage*200}px)`;
+}
+
+prevEmote.onclick=()=>{
+  if(currentPage>0){
+    currentPage--;
+    updateEmotePage();
+  }
+};
+nextEmote.onclick=()=>{
+  if(currentPage<totalPages-1){
+    currentPage++;
+    updateEmotePage();
+  }
+};
 
 /* MAPA */
 const platforms=[
@@ -106,18 +144,17 @@ const platforms=[
   {x:420,y:()=>canvas.height-200,w:140,h:20},
 ];
 
-/* RIKCAT */
+/* DESENHO DO RIKCAT */
 function drawRikcat(x,y,color,emote){
   ctx.save();
-  ctx.translate(x+16,y+16);
+  ctx.translate(x,y);
 
   const outline="#000";
   const earInside="#FF2FA3";
-  const noseColor="#FF2FA3";
 
   ctx.lineWidth=4;
 
-  /* ORELHAS */
+  /* ORELHAS ATRÁS */
   ctx.fillStyle=color; ctx.strokeStyle=outline;
   ctx.beginPath();
   ctx.moveTo(-18,-2); ctx.lineTo(-40,-28); ctx.lineTo(-8,-22);
@@ -148,12 +185,13 @@ function drawRikcat(x,y,color,emote){
   ctx.fillRect(4,0,4,14);
 
   /* NARIZ */
-  ctx.fillStyle=noseColor;
+  ctx.fillStyle="#FF2FA3";
   ctx.beginPath();
   ctx.moveTo(0,14); ctx.lineTo(-6,22); ctx.lineTo(6,22);
   ctx.closePath(); ctx.fill();
 
   /* BOCA */
+  ctx.strokeStyle="#000";
   ctx.beginPath();
   ctx.moveTo(0,22); ctx.lineTo(0,28);
   ctx.quadraticCurveTo(-4,30,-6,28);
@@ -161,7 +199,6 @@ function drawRikcat(x,y,color,emote){
   ctx.quadraticCurveTo(4,30,6,28);
   ctx.stroke();
 
-  /* EMOTE */
   if(emote){
     ctx.font="24px sans-serif";
     ctx.fillText(emote,-10,-35);
@@ -177,15 +214,17 @@ if(!playing) return;
 
 ctx.clearRect(0,0,canvas.width,canvas.height);
 
+/* FÍSICA */
 rikcat.vy+=0.6;
 rikcat.x+=rikcat.vx;
 rikcat.y+=rikcat.vy;
-
 rikcat.onGround=false;
+
 platforms.forEach(p=>{
   const py=p.y();
   ctx.fillStyle="#8B4513";
   ctx.fillRect(p.x,py,p.w,p.h);
+
   if(
     rikcat.x < p.x+p.w &&
     rikcat.x+rikcat.w > p.x &&
@@ -199,8 +238,7 @@ platforms.forEach(p=>{
   }
 });
 
-/* LOCAL */
-drawRikcat(rikcat.x,rikcat.y,playerColors[0],rikcat.emote);
+drawRikcat(rikcat.x,rikcat.y,"#FFB000",rikcat.emote);
 
 /* ONLINE */
 if(onlineEnabled){
@@ -210,12 +248,11 @@ if(onlineEnabled){
     emote:rikcat.emote
   });
 
-  const ids = Object.keys(onlinePlayers);
-  ids.forEach((id,i)=>{
-    if(id===playerId) return;
-    const p = onlinePlayers[id];
-    drawRikcat(p.x,p.y,playerColors[i+1]||"#999",p.emote);
-  });
+  for(const id in onlinePlayers){
+    if(id===playerId) continue;
+    const p=onlinePlayers[id];
+    drawRikcat(p.x,p.y,"#A020F0",p.emote);
+  }
 }
 }
 update();
