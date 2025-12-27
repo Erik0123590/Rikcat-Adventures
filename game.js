@@ -1,5 +1,3 @@
-import { db, ref, set, onValue, onDisconnect } from "./firebase.js";
-
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
@@ -13,22 +11,16 @@ const rotate = document.getElementById("rotate");
 const left  = document.getElementById("left");
 const right = document.getElementById("right");
 const jump  = document.getElementById("jump");
-const attack= document.getElementById("attack");
 
-/* ONLINE */
-const room = "boa_online_03";
-const playerId = "p_" + Math.floor(Math.random()*99999);
-const onlinePlayers = {};
+const left2  = document.getElementById("left2");
+const right2 = document.getElementById("right2");
+const jump2  = document.getElementById("jump2");
 
-/* AUDIO */
-const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-function playSound(freq,time=0.1){
-  const osc = audioCtx.createOscillator();
-  osc.frequency.value = freq;
-  osc.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime+time);
-}
+/* EMOTES */
+const emoteBtn  = document.getElementById("emoteBtn");
+const emoteMenu = document.getElementById("emoteMenu");
+
+let gameStarted=false, playing=false, multiplayer=false;
 
 /* RESIZE */
 function resize(){
@@ -42,54 +34,75 @@ resize();
 function checkOrientation(){
   const portrait = innerHeight > innerWidth;
   rotate.style.display = portrait ? "flex" : "none";
+  playing = !portrait && gameStarted;
 }
 addEventListener("resize", checkOrientation);
 checkOrientation();
 
 /* START */
-let playing=false;
-function startGame(){
+function startGame(isMulti){
+  multiplayer=isMulti;
   titleScreen.style.display="none";
   gameDiv.style.display="block";
+  gameStarted=true;
   playing=true;
+
+  left2.style.display =
+  right2.style.display =
+  jump2.style.display = multiplayer ? "block" : "none";
 }
-soloBtn.onclick=startGame;
-multiBtn.onclick=startGame;
 
-/* PLAYER */
-const rikcat={
-  x:80,y:0,w:32,h:32,
-  vx:0,vy:0,onGround:false,
-  life:3,dir:"right",attacking:false
-};
+soloBtn.onclick = ()=>startGame(false);
+multiBtn.onclick= ()=>startGame(true);
 
-/* FIREBASE */
-const myRef = ref(db, `rooms/${room}/players/${playerId}`);
-onDisconnect(myRef).remove();
-
-onValue(ref(db,`rooms/${room}/players`), snap=>{
-  const data = snap.val();
-  if(data) Object.assign(onlinePlayers,data);
-});
+/* PLAYERS */
+const players = [
+  {
+    name:"Rikcat",
+    color:"orange",
+    x:80,y:0,w:32,h:32,
+    vx:0,vy:0,onGround:false,
+    controls:{left:false,right:false,jump:false},
+    emote:null, emoteTimer:0
+  },
+  {
+    name:"EduKat",
+    color:"purple",
+    x:140,y:0,w:32,h:32,
+    vx:0,vy:0,onGround:false,
+    controls:{left:false,right:false,jump:false},
+    emote:null, emoteTimer:0
+  }
+];
 
 /* CONTROLES */
-left.ontouchstart=()=>rikcat.vx=-4;
-right.ontouchstart=()=>rikcat.vx=4;
-jump.ontouchstart=()=>{
-  if(rikcat.onGround){
-    rikcat.vy=-12;
-    rikcat.onGround=false;
-    playSound(300);
-  }
+left.ontouchstart=()=>players[0].controls.left=true;
+left.ontouchend  =()=>players[0].controls.left=false;
+right.ontouchstart=()=>players[0].controls.right=true;
+right.ontouchend  =()=>players[0].controls.right=false;
+jump.ontouchstart=()=>players[0].controls.jump=true;
+jump.ontouchend  =()=>players[0].controls.jump=false;
+
+left2.ontouchstart=()=>players[1].controls.left=true;
+left2.ontouchend  =()=>players[1].controls.left=false;
+right2.ontouchstart=()=>players[1].controls.right=true;
+right2.ontouchend  =()=>players[1].controls.right=false;
+jump2.ontouchstart=()=>players[1].controls.jump=true;
+jump2.ontouchend  =()=>players[1].controls.jump=false;
+
+/* EMOTES */
+emoteBtn.onclick=()=>{
+  emoteMenu.style.display =
+    emoteMenu.style.display==="block"?"none":"block";
 };
-attack.ontouchstart=()=>{
-  rikcat.attacking=true;
-  playSound(500,0.08);
-  if(navigator.vibrate) navigator.vibrate(30);
-};
-[left,right,jump,attack].forEach(b=>b.ontouchend=()=>{
-  rikcat.vx=0;
-  rikcat.attacking=false;
+
+document.querySelectorAll(".emote").forEach(btn=>{
+  btn.onclick=()=>{
+    players[0].emote = btn.textContent;
+    players[0].emoteTimer = 120;
+    emoteMenu.style.display="none";
+    // aqui você pode enviar pro Firebase depois
+  };
 });
 
 /* MAPA */
@@ -97,153 +110,68 @@ const platforms=[
   {x:0,y:()=>canvas.height-40,w:3000,h:40},
   {x:200,y:()=>canvas.height-120,w:140,h:20},
   {x:420,y:()=>canvas.height-200,w:140,h:20},
-  {x:650,y:()=>canvas.height-260,w:140,h:20},
 ];
 
-/* SPRITE */
-function drawRikcat(x, y, scale = 1, bodyColor = "#FFB000") {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(scale, scale);
-
-  const outline = "#000";
-  const earInside = "#FF2FA3";
-  const noseColor = "#FF2FA3";
-
-  ctx.lineWidth = 4;
-  ctx.lineJoin = "round";
-  ctx.lineCap = "round";
-
-// 👂 ORELHAS (ATRÁS, MAIS BAIXAS)
-
-ctx.fillStyle = bodyColor;
-ctx.strokeStyle = outline;
-
-// Orelha esquerda
-ctx.beginPath();
-ctx.moveTo(-18, -2);
-ctx.lineTo(-40, -28);
-ctx.lineTo(-8, -22);
-ctx.closePath();
-ctx.fill();
-ctx.stroke();
-
-// Dentro esquerda
-ctx.fillStyle = earInside;
-ctx.beginPath();
-ctx.moveTo(-20, -8);
-ctx.lineTo(-32, -22);
-ctx.lineTo(-14, -18);
-ctx.closePath();
-ctx.fill();
-
-// Orelha direita
-ctx.fillStyle = bodyColor;
-ctx.beginPath();
-ctx.moveTo(18, -2);
-ctx.lineTo(40, -28);
-ctx.lineTo(8, -22);
-ctx.closePath();
-ctx.fill();
-ctx.stroke();
-
-// Dentro direita
-ctx.fillStyle = earInside;
-ctx.beginPath();
-ctx.moveTo(20, -8);
-ctx.lineTo(32, -22);
-ctx.lineTo(14, -18);
-ctx.closePath();
-ctx.fill();
-  // 🟠 CABEÇA (por cima das orelhas)
-  ctx.fillStyle = bodyColor;
-  ctx.strokeStyle = outline;
-  ctx.beginPath();
-  ctx.arc(0, 6, 26, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-
-  // 👁 Olhos
-  ctx.fillStyle = "#000";
-  ctx.fillRect(-8, 0, 4, 14);
-  ctx.fillRect(4, 0, 4, 14);
-
-  // 👃 Nariz
-  ctx.fillStyle = noseColor;
-  ctx.beginPath();
-  ctx.moveTo(0, 14);
-  ctx.lineTo(-6, 22);
-  ctx.lineTo(6, 22);
-  ctx.closePath();
-  ctx.fill();
-
-  // 👄 Boca
-  ctx.strokeStyle = outline;
-  ctx.beginPath();
-  ctx.moveTo(0, 22);
-  ctx.lineTo(0, 28);
-  ctx.quadraticCurveTo(-4, 30, -6, 28);
-  ctx.moveTo(0, 28);
-  ctx.quadraticCurveTo(4, 30, 6, 28);
-  ctx.stroke();
-
-  ctx.restore();
-}
-/* LOOP */
+/* UPDATE */
 function update(){
   requestAnimationFrame(update);
   if(!playing) return;
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  rikcat.vy+=0.6;
-  rikcat.x+=rikcat.vx;
-  rikcat.y+=rikcat.vy;
+  ctx.fillStyle="#8B4513";
+  platforms.forEach(p=>ctx.fillRect(p.x,p.y(),p.w,p.h));
 
-  rikcat.onGround=false;
-  platforms.forEach(p=>{
-    const py=p.y();
-    ctx.fillStyle="#8B4513";
-    ctx.fillRect(p.x,py,p.w,p.h);
-    if(
-      rikcat.x < p.x+p.w &&
-      rikcat.x+rikcat.w > p.x &&
-      rikcat.y+rikcat.h > py &&
-      rikcat.y+rikcat.h < py+p.h &&
-      rikcat.vy>0
-    ){
-      rikcat.y=py-rikcat.h;
-      rikcat.vy=0;
-      rikcat.onGround=true;
+  players.forEach((p,i)=>{
+    if(i===1 && !multiplayer) return;
+
+    p.vx=0;
+    if(p.controls.left) p.vx=-4;
+    if(p.controls.right) p.vx=4;
+
+    if(p.controls.jump && p.onGround){
+      p.vy=-12;
+      p.onGround=false;
+    }
+
+    p.vy+=0.6;
+    p.x+=p.vx;
+    p.y+=p.vy;
+
+    p.onGround=false;
+    platforms.forEach(pl=>{
+      const py=pl.y();
+      if(
+        p.x<p.x+pl.w &&
+        p.x+p.w>pl.x &&
+        p.y<py+pl.h &&
+        p.y+p.h>py &&
+        p.vy>0
+      ){
+        p.y=py-p.h;
+        p.vy=0;
+        p.onGround=true;
+      }
+    });
+
+    ctx.fillStyle=p.color;
+    ctx.beginPath();
+    ctx.arc(p.x+p.w/2,p.y+p.h/2,p.w/2,0,Math.PI*2);
+    ctx.fill();
+
+    // NOME
+    ctx.fillStyle="black";
+    ctx.font="12px sans-serif";
+    ctx.textAlign="center";
+    ctx.fillText(p.name,p.x+p.w/2,p.y-5);
+
+    // EMOTE
+    if(p.emote){
+      ctx.font="24px serif";
+      ctx.fillText(p.emote,p.x+p.w/2,p.y-20);
+      p.emoteTimer--;
+      if(p.emoteTimer<=0) p.emote=null;
     }
   });
-
-  drawRikcat(rikcat.x,rikcat.y,1,"orange");
-
-  if(rikcat.attacking){
-    ctx.fillStyle="yellow";
-    ctx.fillRect(rikcat.x+32,rikcat.y+12,20,8);
-  }
-
-  ctx.fillStyle="red";
-  ctx.fillRect(rikcat.x,rikcat.y-6,rikcat.life*10,4);
-
-  set(myRef,{
-    x:rikcat.x,
-    y:rikcat.y,
-    life:rikcat.life,
-    attacking:rikcat.attacking,
-    name:"Rikcat"
-  });
-
-  for(const id in onlinePlayers){
-    if(id===playerId) continue;
-    const p=onlinePlayers[id];
-    drawRikcat(p.x,p.y,1,"purple");
-    if(p.attacking){
-      ctx.fillStyle="yellow";
-      ctx.fillRect(p.x+32,p.y+12,20,8);
-    }
-  }
 }
 update();
