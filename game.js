@@ -126,61 +126,30 @@ const platforms = [
 ];
 
 /* RIKCAT (DESENHO DEFINITIVO) */
-function drawRikcat(x,y,scale=1,color="#FFB000"){
-  ctx.save();
-  ctx.translate(x,y);
-  ctx.scale(scale,scale);
+function drawRikcat(x, y) {
 
-  const outline="#000", earInside="#FF2FA3";
+  // CORPO
+  ctx.fillStyle = "#f4a261";
+  ctx.fillRect(x, y, 40, 40);
 
-  ctx.lineWidth=4;
-
-  // ORELHAS ATRÁS
-  ctx.fillStyle=color;
-  ctx.strokeStyle=outline;
-
-  ctx.beginPath();
-  ctx.moveTo(-18,-2);ctx.lineTo(-40,-28);ctx.lineTo(-8,-22);
-  ctx.closePath();ctx.fill();ctx.stroke();
-
-  ctx.fillStyle=earInside;
-  ctx.beginPath();
-  ctx.moveTo(-20,-8);ctx.lineTo(-32,-22);ctx.lineTo(-14,-18);
-  ctx.closePath();ctx.fill();
-
-  ctx.fillStyle=color;
-  ctx.beginPath();
-  ctx.moveTo(18,-2);ctx.lineTo(40,-28);ctx.lineTo(8,-22);
-  ctx.closePath();ctx.fill();ctx.stroke();
-
-  ctx.fillStyle=earInside;
-  ctx.beginPath();
-  ctx.moveTo(20,-8);ctx.lineTo(32,-22);ctx.lineTo(14,-18);
-  ctx.closePath();ctx.fill();
+  // ORELHAS (ATRÁS DO CORPO)
+  ctx.fillRect(x - 5, y - 15, 15, 15);
+  ctx.fillRect(x + 30, y - 15, 15, 15);
 
   // CABEÇA
-  ctx.fillStyle=color;
-  ctx.strokeStyle=outline;
-  ctx.beginPath();
-  ctx.arc(0,6,26,0,Math.PI*2);
-  ctx.fill();ctx.stroke();
+  ctx.fillRect(x, y, 40, 40);
 
-  // OLHOS
-  ctx.fillStyle="#000";
-  ctx.fillRect(-8,0,4,14);
-  ctx.fillRect(4,0,4,14);
+  // NARIZ (⬅️ ISSO TINHA SUMIDO)
+  ctx.fillStyle = "#000";
+  ctx.fillRect(x + 18, y + 22, 4, 4);
 
   // BOCA
+  ctx.strokeStyle = "#000";
   ctx.beginPath();
-  ctx.moveTo(0,22);ctx.lineTo(0,28);
-  ctx.quadraticCurveTo(-4,30,-6,28);
-  ctx.moveTo(0,28);
-  ctx.quadraticCurveTo(4,30,6,28);
+  ctx.moveTo(x + 16, y + 28);
+  ctx.lineTo(x + 24, y + 28);
   ctx.stroke();
-
-  ctx.restore();
 }
-
 /* LOOP */
 function update(){
   requestAnimationFrame(update);
