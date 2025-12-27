@@ -101,79 +101,87 @@ const platforms=[
 ];
 
 /* SPRITE */
-function drawRikcat(x,y,scale=1,color="orange"){
-  const w=32*scale,h=32*scale;
-  const cx=x+w/2, cy=y+h/2;
+function drawRikcat(x, y, scale = 1, bodyColor = "#FFA500") {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
 
-  /* CABEÇA */
-  ctx.fillStyle=color;
+  const outline = "#000";
+  const earInside = "#FFB347"; // dentro da orelha (laranja claro)
+  const noseColor = "#FF4FA3"; // rosa
+  const mouthColor = "#000";
+
+  // 🟠 Cabeça
+  ctx.fillStyle = bodyColor;
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(cx,cy,w/2,0,Math.PI*2);
+  ctx.arc(0, 0, 16, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle="black";
-  ctx.lineWidth=3;
   ctx.stroke();
 
-  /* ORELHAS (externas) */
-  ctx.fillStyle=color;
+  // 👂 Orelha esquerda
   ctx.beginPath();
-  ctx.moveTo(x-4,y+6);
-  ctx.lineTo(x+8,y-10);
-  ctx.lineTo(x+20,y+6);
+  ctx.moveTo(-18, -10);
+  ctx.lineTo(-30, -28);
+  ctx.lineTo(-10, -24);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
+  // 👂 Orelha direita
   ctx.beginPath();
-  ctx.moveTo(x+w-20,y+6);
-  ctx.lineTo(x+w-8,y-10);
-  ctx.lineTo(x+w+4,y+6);
+  ctx.moveTo(18, -10);
+  ctx.lineTo(30, -28);
+  ctx.lineTo(10, -24);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  /* ORELHAS (internas) */
-  ctx.fillStyle="pink";
+  // 👂 Dentro da orelha esquerda
+  ctx.fillStyle = earInside;
   ctx.beginPath();
-  ctx.moveTo(x+2,y+6);
-  ctx.lineTo(x+8,y-2);
-  ctx.lineTo(x+14,y+6);
+  ctx.moveTo(-18, -14);
+  ctx.lineTo(-26, -24);
+  ctx.lineTo(-14, -22);
   ctx.closePath();
   ctx.fill();
 
+  // 👂 Dentro da orelha direita
   ctx.beginPath();
-  ctx.moveTo(x+w-14,y+6);
-  ctx.lineTo(x+w-8,y-2);
-  ctx.lineTo(x+w-2,y+6);
+  ctx.moveTo(18, -14);
+  ctx.lineTo(26, -24);
+  ctx.lineTo(14, -22);
   ctx.closePath();
   ctx.fill();
 
-  /* OLHOS */
-  ctx.strokeStyle="black";
-  ctx.lineWidth=3;
+  // 👁 Olho esquerdo
+  ctx.fillStyle = "#000";
+  ctx.fillRect(-6, -4, 3, 8);
+
+  // 👁 Olho direito
+  ctx.fillRect(3, -4, 3, 8);
+
+  // 👃 Nariz COM contorno
+  ctx.fillStyle = noseColor;
+  ctx.strokeStyle = outline;
   ctx.beginPath();
-  ctx.moveTo(cx-6,cy-2);
-  ctx.lineTo(cx-6,cy+6);
-  ctx.moveTo(cx+6,cy-2);
-  ctx.lineTo(cx+6,cy+6);
+  ctx.moveTo(0, 2);
+  ctx.lineTo(-4, 8);
+  ctx.lineTo(4, 8);
+  ctx.closePath();
+  ctx.fill();
   ctx.stroke();
 
-  /* NARIZ */
-  ctx.fillStyle="hotpink";
+  // 👄 Boca (agora EXISTE 😼)
+  ctx.strokeStyle = mouthColor;
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(cx,cy+4);
-  ctx.lineTo(cx-4,cy+10);
-  ctx.lineTo(cx+4,cy+10);
-  ctx.closePath();
-  ctx.fill();
-
-  /* BOCA */
-  ctx.strokeStyle="black";
-  ctx.lineWidth=2;
-  ctx.beginPath();
-  ctx.moveTo(cx-4,cy+14);
-  ctx.quadraticCurveTo(cx,cy+16,cx+4,cy+14);
+  ctx.moveTo(-5, 10);
+  ctx.quadraticCurveTo(0, 13, 5, 10);
   ctx.stroke();
+
+  ctx.restore();
 }
 /* LOOP */
 function update(){
