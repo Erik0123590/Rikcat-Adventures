@@ -36,22 +36,6 @@ body{
   border:none;
 }
 
-/* CONFIGURAÇÃO */
-#configScreen{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.7);
-  color:white;
-  font-size:24px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:12px;
-  z-index:20;
-}
-
 /* ROTATE */
 #rotate{
   display:none;
@@ -62,7 +46,7 @@ body{
   font-size:30px;
   align-items:center;
   justify-content:center;
-  z-index:30;
+  z-index:20;
 }
 
 /* GAME */
@@ -96,6 +80,7 @@ canvas{ display:block; }
   font-size:26px;
   z-index:30;
 }
+
 #emoteMenu{
   position:fixed;
   top:60px;
@@ -108,27 +93,41 @@ canvas{ display:block; }
   border-radius:10px;
   z-index:30;
 }
+
 .emote{
   font-size:22px;
+}
+
+/* CONFIGURAÇÕES */
+#settingsBtn{
+  position:fixed;
+  top:15px;
+  right:60px;
+  font-size:26px;
+  z-index:30;
+}
+#settingsMenu{
+  position:fixed;
+  top:60px;
+  right:60px;
+  display:none;
+  flex-direction:column;
+  gap:8px;
+  background:rgba(0,0,0,0.6);
+  padding:10px;
+  border-radius:10px;
+  z-index:30;
+  color:white;
 }
 </style>
 </head>
 
 <body>
 
-<!-- TELA DE TÍTULO -->
 <div id="titleScreen">
   <h1>🐱 Rikcat Adventure</h1>
   <button id="soloBtn">Solo</button>
   <button id="multiBtn">Multiplayer Online</button>
-</div>
-
-<!-- TELA DE CONFIGURAÇÃO -->
-<div id="configScreen">
-  <h2>Escolha personagem</h2>
-  <button id="chooseRikcat">🐱 Rikcat</button>
-  <button id="choosePolvo">🐙 Polvo</button>
-  <button id="startBtn">Começar</button>
 </div>
 
 <div id="rotate">Vire o celular</div>
@@ -144,9 +143,26 @@ canvas{ display:block; }
   <!-- EMOTES -->
   <button id="emoteBtn">😺</button>
   <div id="emoteMenu">
-    <button class="emote">😀</button>
-    <button class="emote">😡</button>
-    <button class="emote">😴</button>
+    <button class="emote">😸</button>
+    <button class="emote">😾</button>
+    <button class="emote">😻</button>
+    <button class="emote">😼</button>
+    <button class="emote">🙀</button>
+    <button class="emote">😿</button>
+    <button class="emote">👍</button>
+    <button class="emote">👎</button>
+  </div>
+
+  <!-- CONFIGURAÇÕES -->
+  <button id="settingsBtn">⚙️</button>
+  <div id="settingsMenu">
+    <label>Escolha a Skin:</label>
+    <select id="skinSelect">
+      <option value="rikcat">Rikcat 🐱</option>
+      <option value="polvo">Polvo 🐙</option>
+    </select>
+    <label>Cor do Corpo:</label>
+    <input type="color" id="bodyColor" value="#FFB000">
   </div>
 </div>
 
