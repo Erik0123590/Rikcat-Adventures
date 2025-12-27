@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Rikcat Adventure — Online Emotes 3</title>
+<title>Rikcat Adventure — Online Emotes 4</title>
 
 <style>
 body{
@@ -85,17 +85,39 @@ canvas{ display:block; }
   position:fixed;
   top:60px;
   right:15px;
+  width:220px;
+  height:170px;
   display:none;
-  flex-direction:column;
-  gap:8px;
   background:rgba(0,0,0,0.6);
   padding:10px;
   border-radius:10px;
   z-index:30;
+  overflow:hidden;
+}
+
+/* ÁREA DESLIZÁVEL */
+#emotePages{
+  display:flex;
+  transition:transform 0.3s ease;
+}
+
+/* CADA PÁGINA */
+.emotePage{
+  min-width:200px;
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:8px;
 }
 
 .emote{
   font-size:22px;
+}
+
+/* NAVEGAÇÃO */
+.emoteNav{
+  display:flex;
+  justify-content:space-between;
+  margin-top:6px;
 }
 </style>
 </head>
@@ -113,7 +135,6 @@ canvas{ display:block; }
 <div id="game">
   <canvas id="canvas"></canvas>
 
-  <!-- CONTROLES -->
   <div id="left" class="btn"></div>
   <div id="right" class="btn"></div>
   <div id="jump" class="btn"></div>
@@ -122,14 +143,11 @@ canvas{ display:block; }
   <!-- EMOTES -->
   <button id="emoteBtn">😺</button>
   <div id="emoteMenu">
-    <button class="emote">😺</button>
-    <button class="emote">😻</button>
-    <button class="emote">😹</button>
-    <button class="emote">😼</button>
-    <button class="emote">😽</button>
-    <button class="emote">🙀</button>
-    <button class="emote">😿</button>
-    <button class="emote">😾</button>
+    <div id="emotePages"></div>
+    <div class="emoteNav">
+      <button id="prevEmote">⬅️</button>
+      <button id="nextEmote">➡️</button>
+    </div>
   </div>
 </div>
 
