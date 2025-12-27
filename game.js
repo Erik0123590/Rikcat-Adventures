@@ -185,23 +185,117 @@ function update() {
     if(cameraX < 0) cameraX = 0;
 
     // Desenho
-    ctx.fillStyle = "#6AA5FF";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    ctx.fillStyle = "#8B4513";
-    platforms.forEach(p => ctx.fillRect(p.x - cameraX, p.y(), p.w, p.h));
+    function drawPlayer(p) {
+    const x = p.x - cameraX + 16;
+    const y = p.y + 16;
+    ctx.save();
+    ctx.translate(x, y);
 
-    if (onlineEnabled) {
-        set(myRef, { x: rikcat.x, y: rikcat.y, skin: rikcat.skin, color: rikcat.color, emote: rikcat.emote });
-        for (let id in onlinePlayers) if (id !== playerId) drawPlayer(onlinePlayers[id]);
+    if(p.skin === "rikcat"){
+        const outline = "#000";
+        const earInside = "#FF2FA3";
+        const noseColor = "#FF2FA3";
+
+        // --- ORELHAS (Baseadas na imagem) ---
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = outline;
+        ctx.fillStyle = p.color;
+
+        // Orelha Esquerda
+        ctx.beginPath();
+        ctx.moveTo(-22, -8);
+        ctx.lineTo(-24, -35);
+        ctx.lineTo(-5, -20);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        
+        // Detalhe Rosa Esquerdo
+        ctx.fillStyle = earInside;
+        ctx.beginPath();
+        ctx.moveTo(-18, -12);
+        ctx.lineTo(-20, -28);
+        ctx.lineTo(-8, -18);
+        ctx.fill();
+
+        // Orelha Direita
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.moveTo(22, -8);
+        ctx.lineTo(24, -35);
+        ctx.lineTo(5, -20);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Detalhe Rosa Direito
+        ctx.fillStyle = earInside;
+        ctx.beginPath();
+        ctx.moveTo(18, -12);
+        ctx.lineTo(20, -28);
+        ctx.lineTo(8, -18);
+        ctx.fill();
+
+        // --- CABEÇA (Círculo perfeito da imagem) ---
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(0, 10, 28, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // --- OLHOS (Traços verticais) ---
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 4;
+        ctx.lineCap = "round";
+        
+        // Olho Esquerdo
+        ctx.beginPath();
+        ctx.moveTo(-10, 2);
+        ctx.lineTo(-10, 14);
+        ctx.stroke();
+
+        // Olho Direito
+        ctx.beginPath();
+        ctx.moveTo(10, 2);
+        ctx.lineTo(10, 14);
+        ctx.stroke();
+
+        // --- NARIZ (Triângulo rosa pequeno) ---
+        ctx.fillStyle = noseColor;
+        ctx.beginPath();
+        ctx.moveTo(0, 16);
+        ctx.lineTo(-5, 22);
+        ctx.lineTo(5, 22);
+        ctx.closePath();
+        ctx.fill();
+
+        // --- BOCA (Estilo "W" da imagem) ---
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        // Lado esquerdo do W
+        ctx.moveTo(-6, 26);
+        ctx.bezierCurveTo(-6, 32, -1, 32, 0, 26);
+        // Lado direito do W
+        ctx.bezierCurveTo(1, 32, 6, 32, 6, 26);
+        ctx.stroke();
+
+    } else {
+        // --- POLVO ---
+        ctx.font = "40px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("🐙", 0, 10);
     }
-    drawPlayer(rikcat);
-}
 
-function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    screens.rotate.style.display = innerHeight > innerWidth ? "flex" : "none";
+    // --- EMOTE ---
+    if(p.emote) { 
+        ctx.font = "bold 24px sans-serif"; 
+        ctx.textAlign = "center"; 
+        ctx.fillStyle = "white";
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 3;
+        ctx.strokeText(p.emote, 0, -45);
+        ctx.fillText(p.emote, 0, -45); 
+    }
+    
+    ctx.restore();
 }
-window.onresize = resize;
-resize();
