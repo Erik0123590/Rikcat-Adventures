@@ -180,7 +180,6 @@ function drawRikcat(x,y,color="#FFB000",emote=null){
 }
 
 /* DESENHO POLVO */
-function drawPolvo(x, y, scale = 1, emote = null) {
 function drawPolvo(x, y, scale = 2, emote = null) {
   ctx.save();
   ctx.translate(x, y);
