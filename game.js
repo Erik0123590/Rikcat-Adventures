@@ -180,63 +180,22 @@ function drawRikcat(x,y,color="#FFB000",emote=null){
 }
 
 /* DESENHO POLVO */
-function drawPolvo(x, y, scale = 1, bodyColor = "#FF69B4", eyeColor = "#000") {
+function drawPolvo(x, y, scale = 1, emote = null) {
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(scale, scale);
 
-  const outline = "#000";
+  // Desenha o polvo como emoji
+  ctx.font = `${32 * scale}px sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("🐙", 0, 0);
 
-  ctx.lineWidth = 3;
-  ctx.lineJoin = "round";
-  ctx.lineCap = "round";
-
-  // 👁 Corpo principal (cabeça)
-  ctx.fillStyle = bodyColor;
-  ctx.strokeStyle = outline;
-  ctx.beginPath();
-  ctx.ellipse(0, 0, 30, 25, 0, 0, Math.PI * 2); // cabeça oval
-  ctx.fill();
-  ctx.stroke();
-
-  // 👂 Tentáculos (arredondados e curvos)
-  ctx.beginPath();
-  ctx.moveTo(-20, 20);
-  ctx.quadraticCurveTo(-25, 40, -10, 50);
-  ctx.quadraticCurveTo(-5, 55, 0, 50);
-  ctx.quadraticCurveTo(5, 45, 10, 50);
-  ctx.quadraticCurveTo(20, 55, 25, 40);
-  ctx.strokeStyle = outline;
-  ctx.stroke();
-
-  // Tentáculos extras (simples curvas)
-  for (let i = -15; i <= 15; i += 15) {
-    ctx.beginPath();
-    ctx.moveTo(i, 20);
-    ctx.quadraticCurveTo(i - 5, 35, i, 40);
-    ctx.stroke();
+  // Se tiver emote, desenha acima
+  if (emote) {
+    ctx.font = `${24 * scale}px sans-serif`;
+    ctx.fillText(emote, 0, -40 * scale);
   }
-
-  // 👁 Olhos
-  ctx.fillStyle = "#fff";
-  ctx.beginPath();
-  ctx.arc(-10, -5, 5, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.arc(10, -5, 5, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = eyeColor;
-  ctx.beginPath();
-  ctx.arc(-10, -5, 2, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.arc(10, -5, 2, 0, Math.PI * 2);
-  ctx.fill();
 
   ctx.restore();
 }
