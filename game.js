@@ -114,48 +114,47 @@ function drawRikcat(x, y, scale = 1, bodyColor = "#FFB000") {
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
 
-  // 👂 ORELHAS (DESENHADAS PRIMEIRO = ATRÁS)
+// 👂 ORELHAS (ATRÁS, MAIS BAIXAS)
 
-  ctx.fillStyle = bodyColor;
-  ctx.strokeStyle = outline;
+ctx.fillStyle = bodyColor;
+ctx.strokeStyle = outline;
 
-  // Orelha esquerda
-  ctx.beginPath();
-  ctx.moveTo(-18, -10);
-  ctx.lineTo(-40, -38);
-  ctx.lineTo(-8, -32);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
+// Orelha esquerda
+ctx.beginPath();
+ctx.moveTo(-18, -2);
+ctx.lineTo(-40, -28);
+ctx.lineTo(-8, -22);
+ctx.closePath();
+ctx.fill();
+ctx.stroke();
 
-  // Dentro esquerda
-  ctx.fillStyle = earInside;
-  ctx.beginPath();
-  ctx.moveTo(-20, -16);
-  ctx.lineTo(-32, -32);
-  ctx.lineTo(-14, -28);
-  ctx.closePath();
-  ctx.fill();
+// Dentro esquerda
+ctx.fillStyle = earInside;
+ctx.beginPath();
+ctx.moveTo(-20, -8);
+ctx.lineTo(-32, -22);
+ctx.lineTo(-14, -18);
+ctx.closePath();
+ctx.fill();
 
-  // Orelha direita
-  ctx.fillStyle = bodyColor;
-  ctx.beginPath();
-  ctx.moveTo(18, -10);
-  ctx.lineTo(40, -38);
-  ctx.lineTo(8, -32);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
+// Orelha direita
+ctx.fillStyle = bodyColor;
+ctx.beginPath();
+ctx.moveTo(18, -2);
+ctx.lineTo(40, -28);
+ctx.lineTo(8, -22);
+ctx.closePath();
+ctx.fill();
+ctx.stroke();
 
-  // Dentro direita
-  ctx.fillStyle = earInside;
-  ctx.beginPath();
-  ctx.moveTo(20, -16);
-  ctx.lineTo(32, -32);
-  ctx.lineTo(14, -28);
-  ctx.closePath();
-  ctx.fill();
-
+// Dentro direita
+ctx.fillStyle = earInside;
+ctx.beginPath();
+ctx.moveTo(20, -8);
+ctx.lineTo(32, -22);
+ctx.lineTo(14, -18);
+ctx.closePath();
+ctx.fill();
   // 🟠 CABEÇA (por cima das orelhas)
   ctx.fillStyle = bodyColor;
   ctx.strokeStyle = outline;
