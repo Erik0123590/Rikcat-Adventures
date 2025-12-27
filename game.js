@@ -105,6 +105,7 @@ function drawRikcat(x,y,scale=1,color="orange"){
   const w=32*scale,h=32*scale;
   const cx=x+w/2, cy=y+h/2;
 
+  /* CABEÇA */
   ctx.fillStyle=color;
   ctx.beginPath();
   ctx.arc(cx,cy,w/2,0,Math.PI*2);
@@ -113,22 +114,67 @@ function drawRikcat(x,y,scale=1,color="orange"){
   ctx.lineWidth=3;
   ctx.stroke();
 
-  // Orelhas
+  /* ORELHAS (externas) */
+  ctx.fillStyle=color;
   ctx.beginPath();
-  ctx.moveTo(x-4,y+6);ctx.lineTo(x+8,y-8);ctx.lineTo(x+20,y+6);
-  ctx.fill();ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(x+w-20,y+6);ctx.lineTo(x+w-8,y-8);ctx.lineTo(x+w+4,y+6);
-  ctx.fill();ctx.stroke();
+  ctx.moveTo(x-4,y+6);
+  ctx.lineTo(x+8,y-10);
+  ctx.lineTo(x+20,y+6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
 
-  // Olhos
-  ctx.strokeStyle="black";
   ctx.beginPath();
-  ctx.moveTo(cx-6,cy-2);ctx.lineTo(cx-6,cy+6);
-  ctx.moveTo(cx+6,cy-2);ctx.lineTo(cx+6,cy+6);
+  ctx.moveTo(x+w-20,y+6);
+  ctx.lineTo(x+w-8,y-10);
+  ctx.lineTo(x+w+4,y+6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  /* ORELHAS (internas) */
+  ctx.fillStyle="pink";
+  ctx.beginPath();
+  ctx.moveTo(x+2,y+6);
+  ctx.lineTo(x+8,y-2);
+  ctx.lineTo(x+14,y+6);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(x+w-14,y+6);
+  ctx.lineTo(x+w-8,y-2);
+  ctx.lineTo(x+w-2,y+6);
+  ctx.closePath();
+  ctx.fill();
+
+  /* OLHOS */
+  ctx.strokeStyle="black";
+  ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.moveTo(cx-6,cy-2);
+  ctx.lineTo(cx-6,cy+6);
+  ctx.moveTo(cx+6,cy-2);
+  ctx.lineTo(cx+6,cy+6);
+  ctx.stroke();
+
+  /* NARIZ */
+  ctx.fillStyle="hotpink";
+  ctx.beginPath();
+  ctx.moveTo(cx,cy+4);
+  ctx.lineTo(cx-4,cy+10);
+  ctx.lineTo(cx+4,cy+10);
+  ctx.closePath();
+  ctx.fill();
+
+  /* BOCA */
+  ctx.strokeStyle="black";
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(cx-4,cy+14);
+  ctx.quadraticCurveTo(cx,cy+16,cx+4,cy+14);
   ctx.stroke();
 }
-
 /* LOOP */
 function update(){
   requestAnimationFrame(update);
