@@ -70,7 +70,30 @@ canvas{ display:block; }
 #right{bottom:20px; left:110px;}
 #jump{bottom:20px; left:200px;}
 #attack{bottom:100px; left:110px;}
-#emote{bottom:100px; left:200px;}
+#emoteBtn{bottom:180px; left:110px;}
+
+/* EMOTES */
+#emoteMenu{
+  position:fixed;
+  bottom:260px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,0.6);
+  padding:10px;
+  border-radius:12px;
+  display:none;
+  z-index:5;
+}
+#emoteMenu button{
+  font-size:28px;
+  margin:5px;
+  border:none;
+  background:white;
+  border-radius:8px;
+}
+#emoteMenu button:active{
+  transform:scale(0.9);
+}
 </style>
 </head>
 
@@ -91,10 +114,19 @@ canvas{ display:block; }
   <div id="right" class="btn"></div>
   <div id="jump" class="btn"></div>
   <div id="attack" class="btn"></div>
-  <div id="emote" class="btn"></div>
+  <div id="emoteBtn" class="btn">😊</div>
+
+  <div id="emoteMenu">
+    <button class="emote">🙂</button>
+    <button class="emote">😡</button>
+    <button class="emote">❤️</button>
+    <button class="emote">👋</button>
+    <button class="emote">🎉</button>
+  </div>
 </div>
 
 <script type="module" src="firebase.js"></script>
 <script type="module" src="game.js"></script>
+
 </body>
 </html>
