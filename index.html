@@ -13,7 +13,7 @@ body{
   font-family:sans-serif;
 }
 
-/* ===== TELA DE TÍTULO ===== */
+/* TELA DE TÍTULO */
 #titleScreen{
   position:fixed;
   inset:0;
@@ -36,7 +36,7 @@ body{
   border:none;
 }
 
-/* ===== ORIENTAÇÃO ===== */
+/* ROTATE */
 #rotate{
   display:none;
   position:fixed;
@@ -49,15 +49,11 @@ body{
   z-index:20;
 }
 
-/* ===== GAME ===== */
-#game{
-  display:none;
-}
-canvas{
-  display:block;
-}
+/* GAME */
+#game{ display:none; }
+canvas{ display:block; }
 
-/* ===== BOTÕES ===== */
+/* BOTÕES */
 .btn{
   position:fixed;
   width:70px;
@@ -76,52 +72,36 @@ canvas{
 #jump{bottom:20px; left:200px;}
 #attack{bottom:100px; left:110px;}
 
-/* ===== EMOTES ===== */
+/* EMOTES */
 #emoteBtn{
   position:fixed;
   top:15px;
   right:15px;
-  width:55px;
-  height:55px;
-  border-radius:50%;
   font-size:26px;
-  border:none;
-  background:rgba(255,255,255,0.85);
-  z-index:6;
-}
-#emoteBtn:active{
-  transform:scale(0.9);
+  z-index:30;
 }
 
-/* MENU DE EMOTES */
 #emoteMenu{
   position:fixed;
-  top:80px;
+  top:60px;
   right:15px;
-  background:rgba(0,0,0,0.75);
-  border-radius:12px;
-  padding:10px;
   display:none;
   flex-direction:column;
   gap:8px;
-  z-index:6;
+  background:rgba(0,0,0,0.6);
+  padding:10px;
+  border-radius:10px;
+  z-index:30;
 }
 
 .emote{
-  font-size:26px;
-  background:none;
-  border:none;
-  color:white;
-}
-.emote:active{
-  transform:scale(0.9);
+  font-size:22px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- ===== TELA DE TÍTULO ===== -->
 <div id="titleScreen">
   <h1>🐱 Rikcat Adventure</h1>
   <button id="soloBtn">Solo</button>
@@ -130,34 +110,24 @@ canvas{
 
 <div id="rotate">Vire o celular</div>
 
-<!-- ===== GAME ===== -->
 <div id="game">
   <canvas id="canvas"></canvas>
 
-  <!-- CONTROLES -->
   <div id="left" class="btn"></div>
   <div id="right" class="btn"></div>
   <div id="jump" class="btn"></div>
   <div id="attack" class="btn"></div>
 
-  <!-- BOTÃO DE EMOTES -->
+  <!-- EMOTES -->
   <button id="emoteBtn">😺</button>
-
-  <!-- MENU DE EMOTES -->
   <div id="emoteMenu">
-    <button class="emote">😄</button>
-    <button class="emote">😂</button>
+    <button class="emote">😀</button>
     <button class="emote">😡</button>
-    <button class="emote">🧡</button>
-    <button class="emote">💜</button>
-    <button class="emote">🔥</button>
-    <button class="emote">😏</button>
+    <button class="emote">😴</button>
   </div>
 </div>
 
-<!-- SCRIPTS -->
 <script type="module" src="firebase.js"></script>
 <script type="module" src="game.js"></script>
-
 </body>
 </html>
