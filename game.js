@@ -181,20 +181,22 @@ function drawRikcat(x,y,color="#FFB000",emote=null){
 
 /* DESENHO POLVO */
 function drawPolvo(x, y, scale = 1, emote = null) {
+function drawPolvo(x, y, scale = 2, emote = null) {
   ctx.save();
   ctx.translate(x, y);
-  ctx.scale(scale, scale);
 
-  // Desenha o polvo como emoji
+  // Ajuste do tamanho
   ctx.font = `${32 * scale}px sans-serif`;
   ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
+  ctx.textBaseline = "alphabetic"; // melhor para "grudar" no chão
   ctx.fillText("🐙", 0, 0);
 
-  // Se tiver emote, desenha acima
+  // Se tiver emote, desenha acima do polvo
   if (emote) {
     ctx.font = `${24 * scale}px sans-serif`;
-    ctx.fillText(emote, 0, -40 * scale);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.fillText(emote, 0, -10 * scale); // posição acima do polvo
   }
 
   ctx.restore();
