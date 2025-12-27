@@ -34,6 +34,7 @@ body{
   padding:12px 30px;
   border-radius:10px;
   border:none;
+  cursor:pointer;
 }
 
 /* ROTATE */
@@ -94,25 +95,20 @@ canvas{ display:block; }
 }
 .emote{
   font-size:22px;
+  cursor:pointer;
 }
 
 /* CONFIGURAÇÕES */
 #configMenu{
   display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.7);
   flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:15px;
+  gap:12px;
+  background:rgba(255,255,255,0.9);
+  padding:20px;
+  border-radius:12px;
+  position:fixed;
+  inset:20px;
   z-index:40;
-  color:white;
-}
-#configMenu button, #configMenu input, #configMenu select{
-  font-size:20px;
-  padding:8px 20px;
-  border-radius:8px;
 }
 </style>
 </head>
@@ -122,7 +118,7 @@ canvas{ display:block; }
 <div id="titleScreen">
   <h1>🐱 Rikcat Adventures</h1>
   <button id="soloBtn">Solo</button>
-  <button id="multiBtn">Multiplayer Online</button>
+  <button id="multiBtn">Salas Online</button>
   <button id="configBtn">Configurações</button>
 </div>
 
@@ -130,6 +126,7 @@ canvas{ display:block; }
 
 <div id="game">
   <canvas id="canvas"></canvas>
+
   <div id="left" class="btn"></div>
   <div id="right" class="btn"></div>
   <div id="jump" class="btn"></div>
@@ -138,28 +135,24 @@ canvas{ display:block; }
   <!-- EMOTES -->
   <button id="emoteBtn">😺</button>
   <div id="emoteMenu">
-    <button class="emote"></button>
-    <button class="emote">😄</button>
+    <button class="emote">😀</button>
     <button class="emote">😡</button>
     <button class="emote">😴</button>
-    <button class="emote">😲</button>
-    <button class="emote">[👁🫦👁]💅</button>
   </div>
 </div>
 
 <!-- CONFIGURAÇÕES -->
 <div id="configMenu">
-  <h2>Configurações</h2>
-  <label>Skin:</label>
-  <select id="skinSelect">
-    <option value="rikcat">Rikcat</option>
-    <option value="polvo">Polvo</option>
-  </select>
-  <label>Cor:</label>
-  <input type="color" id="colorPicker" value="#FFB000">
-  <label>Nome da Sala:</label>
-  <input type="text" id="roomInput" value="Sala1">
-  <button id="configBackBtn">Voltar</button>
+  <label>Skin:
+    <select id="skinSelect">
+      <option value="rikcat">Rikcat</option>
+      <option value="polvo">🐙 Polvo</option>
+    </select>
+  </label>
+  <label>Cor:
+    <input type="color" id="colorSelect" value="#FFB000">
+  </label>
+  <button id="exitConfig">Sair</button>
 </div>
 
 <script type="module" src="firebase.js"></script>
