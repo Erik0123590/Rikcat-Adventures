@@ -3,10 +3,11 @@ import { db, ref, set, onValue, onDisconnect } from "./firebase.js";
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-/* TELAS */
+/* UI */
 const titleScreen = document.getElementById("titleScreen");
 const soloBtn = document.getElementById("soloBtn");
 const multiBtn = document.getElementById("multiBtn");
+const roomInput = document.getElementById("roomInput");
 const gameDiv = document.getElementById("game");
 const rotate = document.getElementById("rotate");
 
@@ -19,14 +20,11 @@ const attack= document.getElementById("attack");
 /* EMOTES */
 const emoteBtn = document.getElementById("emoteBtn");
 const emoteMenu = document.getElementById("emoteMenu");
-const emotePages = document.getElementById("emotePages");
-const prevEmote = document.getElementById("prevEmote");
-const nextEmote = document.getElementById("nextEmote");
 
 /* ONLINE */
-const room = "online_emotes_4";
-const playerId = "p_" + Math.floor(Math.random()*99999);
+let currentRoom = null;
 let onlineEnabled = false;
+const playerId = "p_" + Math.floor(Math.random()*99999);
 const onlinePlayers = {};
 
 /* RESIZE */
@@ -48,9 +46,11 @@ checkOrientation();
 let playing=false;
 function startGame(online){
   onlineEnabled = online;
+  currentRoom = online ? (roomInput.value || "public") : null;
   titleScreen.style.display="none";
   gameDiv.style.display="block";
   playing=true;
+  if(online) connectOnline();
 }
 soloBtn.onclick=()=>startGame(false);
 multiBtn.onclick=()=>startGame(true);
@@ -63,13 +63,16 @@ const rikcat={
 };
 
 /* FIREBASE */
-const myRef = ref(db, `rooms/${room}/players/${playerId}`);
-onDisconnect(myRef).remove();
+let myRef=null;
+function connectOnline(){
+  myRef = ref(db, `rooms/${currentRoom}/players/${playerId}`);
+  onDisconnect(myRef).remove();
 
-onValue(ref(db,`rooms/${room}/players`), snap=>{
-  Object.keys(onlinePlayers).forEach(k=>delete onlinePlayers[k]);
-  if(snap.val()) Object.assign(onlinePlayers,snap.val());
-});
+  onValue(ref(db, `rooms/${currentRoom}/players`), snap=>{
+    Object.keys(onlinePlayers).forEach(k=>delete onlinePlayers[k]);
+    if(snap.val()) Object.assign(onlinePlayers, snap.val());
+  });
+}
 
 /* CONTROLES */
 left.ontouchstart=()=>rikcat.vx=-4;
@@ -86,125 +89,76 @@ attack.ontouchstart=()=>{};
 /* EMOTES */
 emoteBtn.onclick=()=>{
   emoteMenu.style.display =
-    emoteMenu.style.display==="block"?"none":"block";
+    emoteMenu.style.display==="flex"?"none":"flex";
 };
-
-/* LISTA DE EMOTES */
-const emotes=[
-  "😀","😡","😴","😂","😭",
-  "😎","🥳","😱","❤️","🔥",
-  "👍","👎"
-];
-
-const EMOTES_PER_PAGE=5;
-let currentPage=0;
-
-for(let i=0;i<emotes.length;i+=EMOTES_PER_PAGE){
-  const page=document.createElement("div");
-  page.className="emotePage";
-
-  emotes.slice(i,i+EMOTES_PER_PAGE).forEach(e=>{
-    const btn=document.createElement("button");
-    btn.className="emote";
-    btn.textContent=e;
-    btn.onclick=()=>{
-      rikcat.emote=e;
-      emoteMenu.style.display="none";
-    };
-    page.appendChild(btn);
-  });
-
-  emotePages.appendChild(page);
-}
-
-const totalPages=Math.ceil(emotes.length/EMOTES_PER_PAGE);
-
-function updateEmotePage(){
-  emotePages.style.transform=
-    `translateX(${-currentPage*200}px)`;
-}
-
-prevEmote.onclick=()=>{
-  if(currentPage>0){
-    currentPage--;
-    updateEmotePage();
-  }
-};
-nextEmote.onclick=()=>{
-  if(currentPage<totalPages-1){
-    currentPage++;
-    updateEmotePage();
-  }
-};
+document.querySelectorAll(".emote").forEach(btn=>{
+  btn.onclick=()=>{
+    rikcat.emote = btn.textContent;
+    emoteMenu.style.display="none";
+  };
+});
 
 /* MAPA */
 const platforms=[
   {x:0,y:()=>canvas.height-40,w:3000,h:40},
   {x:200,y:()=>canvas.height-120,w:140,h:20},
-  {x:420,y:()=>canvas.height-200,w:140,h:20},
 ];
 
-/* DESENHO DO RIKCAT */
+/* RIKCAT */
 function drawRikcat(x,y,color,emote){
-  ctx.save();
-  ctx.translate(x,y);
+ctx.save();
+ctx.translate(x,y);
 
-  const outline="#000";
-  const earInside="#FF2FA3";
+const outline="#000";
+const earInside="#FF2FA3";
+const noseColor="#FF2FA3";
 
-  ctx.lineWidth=4;
+ctx.lineWidth=4;
 
-  /* ORELHAS ATRÁS */
-  ctx.fillStyle=color; ctx.strokeStyle=outline;
-  ctx.beginPath();
-  ctx.moveTo(-18,-2); ctx.lineTo(-40,-28); ctx.lineTo(-8,-22);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-  ctx.fillStyle=earInside;
-  ctx.beginPath();
-  ctx.moveTo(-20,-8); ctx.lineTo(-32,-22); ctx.lineTo(-14,-18);
-  ctx.closePath(); ctx.fill();
+// ORELHAS
+ctx.fillStyle=color; ctx.strokeStyle=outline;
+ctx.beginPath(); ctx.moveTo(-18,-2); ctx.lineTo(-40,-28); ctx.lineTo(-8,-22);
+ctx.closePath(); ctx.fill(); ctx.stroke();
+ctx.fillStyle=earInside;
+ctx.beginPath(); ctx.moveTo(-20,-8); ctx.lineTo(-32,-22); ctx.lineTo(-14,-18);
+ctx.closePath(); ctx.fill();
 
-  ctx.fillStyle=color;
-  ctx.beginPath();
-  ctx.moveTo(18,-2); ctx.lineTo(40,-28); ctx.lineTo(8,-22);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-  ctx.fillStyle=earInside;
-  ctx.beginPath();
-  ctx.moveTo(20,-8); ctx.lineTo(32,-22); ctx.lineTo(14,-18);
-  ctx.closePath(); ctx.fill();
+ctx.fillStyle=color;
+ctx.beginPath(); ctx.moveTo(18,-2); ctx.lineTo(40,-28); ctx.lineTo(8,-22);
+ctx.closePath(); ctx.fill(); ctx.stroke();
+ctx.fillStyle=earInside;
+ctx.beginPath(); ctx.moveTo(20,-8); ctx.lineTo(32,-22); ctx.lineTo(14,-18);
+ctx.closePath(); ctx.fill();
 
-  /* CABEÇA */
-  ctx.fillStyle=color;
-  ctx.beginPath();
-  ctx.arc(0,6,26,0,Math.PI*2);
-  ctx.fill(); ctx.stroke();
+// CABEÇA
+ctx.fillStyle=color;
+ctx.beginPath(); ctx.arc(0,6,26,0,Math.PI*2);
+ctx.fill(); ctx.stroke();
 
-  /* OLHOS */
-  ctx.fillStyle="#000";
-  ctx.fillRect(-8,0,4,14);
-  ctx.fillRect(4,0,4,14);
+// OLHOS
+ctx.fillStyle="#000";
+ctx.fillRect(-8,0,4,14);
+ctx.fillRect(4,0,4,14);
 
-  /* NARIZ */
-  ctx.fillStyle="#FF2FA3";
-  ctx.beginPath();
-  ctx.moveTo(0,14); ctx.lineTo(-6,22); ctx.lineTo(6,22);
-  ctx.closePath(); ctx.fill();
+// NARIZ
+ctx.fillStyle=noseColor;
+ctx.beginPath(); ctx.moveTo(0,14); ctx.lineTo(-6,22); ctx.lineTo(6,22);
+ctx.closePath(); ctx.fill();
 
-  /* BOCA */
-  ctx.strokeStyle="#000";
-  ctx.beginPath();
-  ctx.moveTo(0,22); ctx.lineTo(0,28);
-  ctx.quadraticCurveTo(-4,30,-6,28);
-  ctx.moveTo(0,28);
-  ctx.quadraticCurveTo(4,30,6,28);
-  ctx.stroke();
+// BOCA
+ctx.beginPath();
+ctx.moveTo(0,22); ctx.lineTo(0,28);
+ctx.quadraticCurveTo(-4,30,-6,28);
+ctx.moveTo(0,28);
+ctx.quadraticCurveTo(4,30,6,28);
+ctx.stroke();
 
-  if(emote){
-    ctx.font="24px sans-serif";
-    ctx.fillText(emote,-10,-35);
-  }
-
-  ctx.restore();
+// EMOTE
+if(emote){
+  ctx.font="24px sans-serif";
+  ctx.fillText(emote,-10,-35);
+}
+ctx.restore();
 }
 
 /* LOOP */
@@ -214,17 +168,15 @@ if(!playing) return;
 
 ctx.clearRect(0,0,canvas.width,canvas.height);
 
-/* FÍSICA */
 rikcat.vy+=0.6;
 rikcat.x+=rikcat.vx;
 rikcat.y+=rikcat.vy;
-rikcat.onGround=false;
 
+rikcat.onGround=false;
 platforms.forEach(p=>{
   const py=p.y();
   ctx.fillStyle="#8B4513";
   ctx.fillRect(p.x,py,p.w,p.h);
-
   if(
     rikcat.x < p.x+p.w &&
     rikcat.x+rikcat.w > p.x &&
@@ -240,18 +192,15 @@ platforms.forEach(p=>{
 
 drawRikcat(rikcat.x,rikcat.y,"#FFB000",rikcat.emote);
 
-/* ONLINE */
 if(onlineEnabled){
-  set(myRef,{
-    x:rikcat.x,
-    y:rikcat.y,
-    emote:rikcat.emote
-  });
-
+  set(myRef,{x:rikcat.x,y:rikcat.y,emote:rikcat.emote});
+  let i=0;
   for(const id in onlinePlayers){
     if(id===playerId) continue;
     const p=onlinePlayers[id];
-    drawRikcat(p.x,p.y,"#A020F0",p.emote);
+    const color = i===0 ? "#A020F0" : "#2ECC71";
+    drawRikcat(p.x,p.y,color,p.emote);
+    i++;
   }
 }
 }
