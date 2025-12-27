@@ -13,7 +13,7 @@ body{
   font-family:sans-serif;
 }
 
-/* TELA DE TÍTULO */
+/* ===== TELA DE TÍTULO ===== */
 #titleScreen{
   position:fixed;
   inset:0;
@@ -25,12 +25,10 @@ body{
   gap:15px;
   z-index:10;
 }
-
 #titleScreen h1{
   color:white;
   font-size:42px;
 }
-
 #titleScreen button{
   font-size:22px;
   padding:12px 30px;
@@ -38,7 +36,7 @@ body{
   border:none;
 }
 
-/* ROTACIONAR */
+/* ===== ORIENTAÇÃO ===== */
 #rotate{
   display:none;
   position:fixed;
@@ -51,16 +49,15 @@ body{
   z-index:20;
 }
 
-/* JOGO */
+/* ===== GAME ===== */
 #game{
   display:none;
 }
-
 canvas{
   display:block;
 }
 
-/* BOTÕES */
+/* ===== BOTÕES ===== */
 .btn{
   position:fixed;
   width:70px;
@@ -73,42 +70,67 @@ canvas{
   background:rgba(255,255,255,0.6);
 }
 
-/* CONTROLES P1 */
+/* CONTROLES */
 #left{bottom:20px; left:20px;}
 #right{bottom:20px; left:110px;}
 #jump{bottom:20px; left:200px;}
 #attack{bottom:100px; left:110px;}
 
-/* BOTÃO DE EMOTES (CANTO SUPERIOR DIREITO) */
+/* ===== EMOTES ===== */
 #emoteBtn{
   position:fixed;
   top:15px;
   right:15px;
-  font-size:22px;
-  padding:8px 14px;
-  border-radius:12px;
+  width:55px;
+  height:55px;
+  border-radius:50%;
+  font-size:26px;
   border:none;
-  z-index:5;
+  background:rgba(255,255,255,0.85);
+  z-index:6;
 }
 #emoteBtn:active{
-  transform:scale(0.95);
+  transform:scale(0.9);
+}
+
+/* MENU DE EMOTES */
+#emoteMenu{
+  position:fixed;
+  top:80px;
+  right:15px;
+  background:rgba(0,0,0,0.75);
+  border-radius:12px;
+  padding:10px;
+  display:none;
+  flex-direction:column;
+  gap:8px;
+  z-index:6;
+}
+
+.emote{
+  font-size:26px;
+  background:none;
+  border:none;
+  color:white;
+}
+.emote:active{
+  transform:scale(0.9);
 }
 </style>
 </head>
 
 <body>
 
-<!-- TÍTULO -->
+<!-- ===== TELA DE TÍTULO ===== -->
 <div id="titleScreen">
   <h1>🐱 Rikcat Adventure</h1>
   <button id="soloBtn">Solo</button>
   <button id="multiBtn">Multiplayer Online</button>
 </div>
 
-<!-- ORIENTAÇÃO -->
 <div id="rotate">Vire o celular</div>
 
-<!-- JOGO -->
+<!-- ===== GAME ===== -->
 <div id="game">
   <canvas id="canvas"></canvas>
 
@@ -118,8 +140,19 @@ canvas{
   <div id="jump" class="btn"></div>
   <div id="attack" class="btn"></div>
 
-  <!-- EMOTES -->
+  <!-- BOTÃO DE EMOTES -->
   <button id="emoteBtn">😺</button>
+
+  <!-- MENU DE EMOTES -->
+  <div id="emoteMenu">
+    <button class="emote">😄</button>
+    <button class="emote">😂</button>
+    <button class="emote">😡</button>
+    <button class="emote">🧡</button>
+    <button class="emote">💜</button>
+    <button class="emote">🔥</button>
+    <button class="emote">😏</button>
+  </div>
 </div>
 
 <!-- SCRIPTS -->
