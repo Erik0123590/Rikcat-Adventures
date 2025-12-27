@@ -3,258 +3,267 @@ import { db, ref, set, onValue, onDisconnect } from "./firebase.js";
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-// Elementos
 const titleScreen = document.getElementById("titleScreen");
 const soloBtn = document.getElementById("soloBtn");
 const multiBtn = document.getElementById("multiBtn");
-const configBtn = document.createElement("button");
 const gameDiv = document.getElementById("game");
 const rotate = document.getElementById("rotate");
+const configBtn = document.getElementById("configBtn");
 
-// Controles
-const left = document.getElementById("left");
+/* CONTROLES */
+const left  = document.getElementById("left");
 const right = document.getElementById("right");
-const jump = document.getElementById("jump");
-const attack = document.getElementById("attack");
+const up    = document.getElementById("jump");
+const down  = document.getElementById("down");
+const attack= document.getElementById("attack");
 
-// Emotes
+/* EMOTES */
 const emoteBtn = document.getElementById("emoteBtn");
 const emoteMenu = document.getElementById("emoteMenu");
 
-// Multiplayer
-const room = "salas_online_1";
+/* JOGO ONLINE */
+const room = "online_salas_1";
 const playerId = "p_" + Math.floor(Math.random() * 99999);
-const onlinePlayers = {};
 let onlineEnabled = false;
+const onlinePlayers = {};
 
-// Configurações do jogador
-let playerConfig = {
-    skin: "rikcat", // "rikcat" ou "polvo"
-    color: "#FFB000"
-};
+/* CONFIGURAÇÃO INICIAL */
+let playerSkin = "rikcat"; // rikcat ou polvo
+let playerColor = "#FFB000"; // cor padrão
 
-// Canvas resize
-function resize() {
-    canvas.width = innerWidth;
-    canvas.height = innerHeight;
+/* GRAVIDADE */
+const GRAVITY = 0.6;
+const TERMINAL_V = 12;
+
+/* RESIZE */
+function resize(){
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
 }
-window.addEventListener("resize", resize);
+addEventListener("resize", resize);
 resize();
 
-// Orientação
-function checkOrientation() {
-    rotate.style.display = innerHeight > innerWidth ? "flex" : "none";
+/* ORIENTAÇÃO */
+function checkOrientation(){
+  rotate.style.display = innerHeight > innerWidth ? "flex" : "none";
 }
-window.addEventListener("resize", checkOrientation);
+addEventListener("resize", checkOrientation);
 checkOrientation();
 
-// Estado do jogo
+/* START */
 let playing = false;
-let currentLevel = "main"; // "main" ou "water"
+function startGame(online){
+  onlineEnabled = online;
+  titleScreen.style.display = "none";
+  gameDiv.style.display = "block";
+  playing = true;
+}
+soloBtn.onclick = () => startGame(false);
+multiBtn.onclick = () => startGame(true);
 
-// Jogador principal
-const player = {
-    x: 80,
-    y: 0,
-    w: 32,
-    h: 32,
-    vx: 0,
-    vy: 0,
-    onGround: false,
-    life: 3,
-    attacking: false,
-    emote: null,
-    skin: playerConfig.skin,
-    color: playerConfig.color
+/* PLAYER */
+const rikcat = {
+  x: 80, y: 0, w: 32, h: 32,
+  vx: 0, vy: 0, onGround: false,
+  life: 3, attacking: false,
+  emote: null,
+  skin: playerSkin,
+  color: playerColor
 };
 
-// Física
-const gravity = 0.6;
-
-// Plataformas
-const levels = {
-    main: [
-        { x: 0, y: () => canvas.height - 40, w: 3000, h: 40 },
-        { x: 200, y: () => canvas.height - 120, w: 140, h: 20 },
-        { x: 420, y: () => canvas.height - 200, w: 140, h: 20 },
-        { x: 650, y: () => canvas.height - 260, w: 140, h: 20 },
-    ],
-    water: [
-        { x: 0, y: () => canvas.height - 40, w: 3000, h: 40 },
-        { x: 150, y: () => canvas.height - 100, w: 140, h: 20 },
-        { x: 400, y: () => canvas.height - 180, w: 140, h: 20 },
-        { x: 650, y: () => canvas.height - 220, w: 140, h: 20 },
-    ]
-};
-
-// Câmera
-const camera = { x: 0, y: 0, scale: 1 };
-
-// Firebase
+/* FIREBASE */
 const myRef = ref(db, `rooms/${room}/players/${playerId}`);
 onDisconnect(myRef).remove();
 
-onValue(ref(db, `rooms/${room}/players`), snap => {
-    Object.keys(onlinePlayers).forEach(k => delete onlinePlayers[k]);
-    if (snap.val()) Object.assign(onlinePlayers, snap.val());
+onValue(ref(db,`rooms/${room}/players`), snap => {
+  Object.keys(onlinePlayers).forEach(k => delete onlinePlayers[k]);
+  if(snap.val()) Object.assign(onlinePlayers, snap.val());
 });
 
-// Funções
-function startGame(online) {
-    onlineEnabled = online;
-    titleScreen.style.display = "none";
-    gameDiv.style.display = "block";
-    playing = true;
-}
+/* CONTROLES */
+left.ontouchstart  = () => rikcat.vx = -4;
+right.ontouchstart = () => rikcat.vx = 4;
+up.ontouchstart    = () => { if(rikcat.onGround) { rikcat.vy=-12; rikcat.onGround=false; } };
+down.ontouchstart  = () => {}; // se quiser, pode usar para mergulho
+attack.ontouchstart = () => rikcat.attacking = true;
 
-// Controles de toque
-left.ontouchstart = () => player.vx = -4;
-right.ontouchstart = () => player.vx = 4;
-jump.ontouchstart = () => { if (player.onGround) { player.vy = -12; player.onGround = false; } };
-attack.ontouchstart = () => player.attacking = true;
-[left, right, jump, attack].forEach(b => b.ontouchend = () => { player.vx = 0; player.attacking = false; });
+[left,right,up,down,attack].forEach(b => b.ontouchend = () => {
+  rikcat.vx = 0;
+  rikcat.attacking = false;
+});
 
-// Emotes
-if (emoteBtn && emoteMenu) {
-    emoteBtn.onclick = () => {
-        emoteMenu.style.display = emoteMenu.style.display === "flex" ? "none" : "flex";
+/* EMOTES */
+if(emoteBtn && emoteMenu){
+  emoteBtn.onclick = () => {
+    emoteMenu.style.display = emoteMenu.style.display === "flex" ? "none" : "flex";
+  };
+  document.querySelectorAll(".emote").forEach(btn => {
+    btn.onclick = () => {
+      rikcat.emote = btn.textContent;
+      emoteMenu.style.display = "none";
     };
-    document.querySelectorAll(".emote").forEach(btn => {
-        btn.onclick = () => {
-            player.emote = btn.textContent;
-            emoteMenu.style.display = "none";
-        };
+  });
+}
+
+/* MAPA */
+const platforms = [
+  {x:0, y:()=>canvas.height-40, w:3000, h:40},
+  {x:200, y:()=>canvas.height-120, w:140, h:20},
+  {x:420, y:()=>canvas.height-200, w:140, h:20},
+  {x:650, y:()=>canvas.height-260, w:140, h:20},
+];
+
+/* CANO/Fase aquática */
+const pipes = [
+  {x:900, y:canvas.height-60, w:40, h:60, target:"water"}
+];
+let inWater = false;
+
+/* CÂMERA */
+let cameraX = 0;
+let cameraY = 0;
+
+/* DESENHO DO RIKCAT OU POLVO */
+function drawPlayer(player){
+  const x = player.x - cameraX;
+  const y = player.y - cameraY;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(1,1);
+
+  const outline="#000";
+  const earInside="#FF2FA3";
+  const noseColor="#FF2FA3";
+
+  if(player.skin === "rikcat"){
+    // Orelhas
+    ctx.fillStyle=player.color; ctx.strokeStyle=outline;
+    ctx.beginPath(); ctx.moveTo(-18,-2); ctx.lineTo(-40,-28); ctx.lineTo(-8,-22);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=earInside;
+    ctx.beginPath(); ctx.moveTo(-20,-8); ctx.lineTo(-32,-22); ctx.lineTo(-14,-18);
+    ctx.closePath(); ctx.fill();
+
+    ctx.fillStyle=player.color;
+    ctx.beginPath(); ctx.moveTo(18,-2); ctx.lineTo(40,-28); ctx.lineTo(8,-22);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=earInside;
+    ctx.beginPath(); ctx.moveTo(20,-8); ctx.lineTo(32,-22); ctx.lineTo(14,-18);
+    ctx.closePath(); ctx.fill();
+
+    // Cabeça
+    ctx.fillStyle=player.color;
+    ctx.beginPath();
+    ctx.arc(0,6,26,0,Math.PI*2);
+    ctx.fill(); ctx.stroke();
+
+    // Olhos
+    ctx.fillStyle="#000";
+    ctx.fillRect(-8,0,4,14);
+    ctx.fillRect(4,0,4,14);
+
+    // Nariz
+    ctx.fillStyle=noseColor;
+    ctx.beginPath();
+    ctx.moveTo(0,14); ctx.lineTo(-6,22); ctx.lineTo(6,22);
+    ctx.closePath(); ctx.fill();
+
+    // Boca
+    ctx.beginPath();
+    ctx.moveTo(0,22); ctx.lineTo(0,28);
+    ctx.quadraticCurveTo(-4,30,-6,28);
+    ctx.moveTo(0,28);
+    ctx.quadraticCurveTo(4,30,6,28);
+    ctx.stroke();
+  } else if(player.skin === "polvo"){
+    ctx.font = "60px sans-serif";
+    ctx.fillText("🐙",-20,-10);
+  }
+
+  // Emote
+  if(player.emote){
+    ctx.font="24px sans-serif";
+    ctx.fillText(player.emote,-10,-35);
+  }
+
+  ctx.restore();
+}
+
+/* LOOP */
+function update(){
+  requestAnimationFrame(update);
+  if(!playing) return;
+
+  // Física
+  rikcat.vy += GRAVITY;
+  if(rikcat.vy > TERMINAL_V) rikcat.vy = TERMINAL_V;
+  rikcat.x += rikcat.vx;
+  rikcat.y += rikcat.vy;
+  rikcat.onGround = false;
+
+  // Colisão com plataformas
+  platforms.forEach(p=>{
+    const py = p.y();
+    if(rikcat.x < p.x+p.w && rikcat.x+rikcat.w > p.x &&
+       rikcat.y+rikcat.h > py && rikcat.y+rikcat.h < py+p.h &&
+       rikcat.vy>0){
+      rikcat.y = py-rikcat.h;
+      rikcat.vy = 0;
+      rikcat.onGround = true;
+    }
+  });
+
+  // Colisão com cano
+  pipes.forEach(pipe=>{
+    if(rikcat.x+rikcat.w>pipe.x && rikcat.x<pipe.x+pipe.w &&
+       rikcat.y+rikcat.h>pipe.y && rikcat.y<pipe.y+pipe.h &&
+       rikcat.attacking){
+      inWater = pipe.target==="water";
+      rikcat.x = inWater ? 50 : 80;
+      rikcat.y = inWater ? 50 : 0;
+    }
+  });
+
+  // Câmera
+  cameraX = rikcat.x - canvas.width/2;
+  cameraY = rikcat.y - canvas.height/2;
+  if(cameraX<0) cameraX=0;
+  if(cameraY<0) cameraY=0;
+
+  // Fundo
+  ctx.fillStyle = inWater ? "#3399FF" : "#6AA5FF";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // Desenhar plataformas
+  ctx.fillStyle = "#8B4513";
+  platforms.forEach(p=>{
+    const py = p.y();
+    ctx.fillRect(p.x - cameraX, py - cameraY, p.w, p.h);
+  });
+
+  // Desenhar canos
+  ctx.fillStyle = "blue";
+  pipes.forEach(pipe=>{
+    ctx.fillRect(pipe.x - cameraX, pipe.y - cameraY, pipe.w, pipe.h);
+  });
+
+  // Jogador
+  drawPlayer(rikcat);
+
+  // Multiplayer
+  if(onlineEnabled){
+    set(myRef,{
+      x: rikcat.x,
+      y: rikcat.y,
+      emote: rikcat.emote,
+      skin: rikcat.skin,
+      color: rikcat.color
     });
-}
-
-// Função para desenhar Rikcat ou Polvo
-function drawCharacter(x, y, scale, color, skin, emote) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(scale, scale);
-
-    const outline = "#000";
-    const earInside = "#FF2FA3";
-    const noseColor = "#FF2FA3";
-
-    if (skin === "rikcat") {
-        // Orelhas
-        ctx.fillStyle = color; ctx.strokeStyle = outline;
-        ctx.beginPath(); ctx.moveTo(-18, -2); ctx.lineTo(-40, -28); ctx.lineTo(-8, -22);
-        ctx.closePath(); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = earInside;
-        ctx.beginPath(); ctx.moveTo(-20, -8); ctx.lineTo(-32, -22); ctx.lineTo(-14, -18);
-        ctx.closePath(); ctx.fill();
-
-        ctx.fillStyle = color;
-        ctx.beginPath(); ctx.moveTo(18, -2); ctx.lineTo(40, -28); ctx.lineTo(8, -22);
-        ctx.closePath(); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = earInside;
-        ctx.beginPath(); ctx.moveTo(20, -8); ctx.lineTo(32, -22); ctx.lineTo(14, -18);
-        ctx.closePath(); ctx.fill();
-
-        // Cabeça
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(0, 6, 26, 0, Math.PI * 2);
-        ctx.fill(); ctx.stroke();
-
-        // Olhos
-        ctx.fillStyle = "#000";
-        ctx.fillRect(-8, 0, 4, 14);
-        ctx.fillRect(4, 0, 4, 14);
-
-        // Nariz
-        ctx.fillStyle = noseColor;
-        ctx.beginPath();
-        ctx.moveTo(0, 14); ctx.lineTo(-6, 22); ctx.lineTo(6, 22);
-        ctx.closePath(); ctx.fill();
-
-        // Boca
-        ctx.beginPath();
-        ctx.moveTo(0, 22); ctx.lineTo(0, 28);
-        ctx.quadraticCurveTo(-4, 30, -6, 28);
-        ctx.moveTo(0, 28);
-        ctx.quadraticCurveTo(4, 30, 6, 28);
-        ctx.stroke();
-    } else if (skin === "polvo") {
-        ctx.font = "48px sans-serif";
-        ctx.fillText("🐙", -24, 24);
+    for(const id in onlinePlayers){
+      if(id === playerId) continue;
+      drawPlayer(onlinePlayers[id]);
     }
-
-    if (emote) {
-        ctx.font = "24px sans-serif";
-        ctx.fillText(emote, -10, -35);
-    }
-
-    ctx.restore();
+  }
 }
-
-// Loop principal
-function update() {
-    requestAnimationFrame(update);
-    if (!playing) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Aplicar gravidade
-    player.vy += gravity;
-    player.x += player.vx;
-    player.y += player.vy;
-    player.onGround = false;
-
-    // Selecionar plataformas
-    const platforms = levels[currentLevel];
-
-    // Colisões
-    platforms.forEach(p => {
-        const py = p.y();
-        ctx.fillStyle = currentLevel === "water" ? "#3aa" : "#8B4513";
-        ctx.fillRect(p.x, py, p.w, p.h);
-        if (
-            player.x < p.x + p.w &&
-            player.x + player.w > p.x &&
-            player.y + player.h > py &&
-            player.y + player.h < py + p.h &&
-            player.vy > 0
-        ) {
-            player.y = py - player.h;
-            player.vy = 0;
-            player.onGround = true;
-        }
-    });
-
-    // Atualizar câmera
-    camera.x = player.x - canvas.width / 2;
-    camera.y = player.y - canvas.height / 2;
-    ctx.save();
-    ctx.translate(-camera.x, -camera.y);
-
-    // Desenhar jogador
-    drawCharacter(player.x, player.y, 1, player.color, player.skin, player.emote);
-
-    // Multiplayer
-    if (onlineEnabled) {
-        set(myRef, {
-            x: player.x,
-            y: player.y,
-            skin: player.skin,
-            color: player.color,
-            emote: player.emote,
-            level: currentLevel
-        });
-
-        for (const id in onlinePlayers) {
-            if (id === playerId) continue;
-            const p = onlinePlayers[id];
-            drawCharacter(p.x, p.y, 1, p.color || "#A020F0", p.skin || "rikcat", p.emote);
-        }
-    }
-
-    ctx.restore();
-}
-
-soloBtn.onclick = () => startGame(false);
-multiBtn.onclick = () => startGame(true);
 
 update();
