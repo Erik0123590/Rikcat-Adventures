@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* FIREBASE */
+/* ================= FIREBASE ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyDCGDk08XGGYOTYnXchuDDrBS0emCm87P0",
   authDomain: "rikcatonline.firebaseapp.com",
@@ -12,14 +12,26 @@ const firebaseConfig = {
   appId: "1:504285237002:web:9841ceb83ea0fe919674f3"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+let db = null;
+try{
+  const app = initializeApp(firebaseConfig);
+  db = getDatabase(app);
+}catch(e){
+  console.log("Firebase offline");
+}
 
-/* CANVAS */
+/* ================= CANVAS ================= */
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-/* UI */
+function resize(){
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+}
+addEventListener("resize", resize);
+resize();
+
+/* ================= UI ================= */
 const titleScreen = document.getElementById("titleScreen");
 const gameDiv = document.getElementById("game");
 const soloBtn = document.getElementById("soloBtn");
@@ -37,20 +49,12 @@ const jump2 = document.getElementById("jump2");
 
 let multiplayer = false;
 
-/* RESIZE */
-function resize(){
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
-}
-addEventListener("resize", resize);
-resize();
-
-/* PLAYERS */
+/* ================= PLAYERS ================= */
 const players = [
   {
     name:"Rikcat",
     color:"orange",
-    x:80,y:0,w:32,h:32,
+    x:100,y:0,w:32,h:32,
     vx:0,vy:0,onGround:false,
     emote:null, emoteTime:0,
     controls:{left:false,right:false,jump:false}
@@ -58,14 +62,14 @@ const players = [
   {
     name:"EduKat",
     color:"purple",
-    x:140,y:0,w:32,h:32,
+    x:160,y:0,w:32,h:32,
     vx:0,vy:0,onGround:false,
     emote:null, emoteTime:0,
     controls:{left:false,right:false,jump:false}
   }
 ];
 
-/* CONTROLES */
+/* ================= CONTROLES ================= */
 left.ontouchstart=()=>players[0].controls.left=true;
 left.ontouchend=()=>players[0].controls.left=false;
 right.ontouchstart=()=>players[0].controls.right=true;
@@ -80,28 +84,28 @@ right2.ontouchend=()=>players[1].controls.right=false;
 jump2.ontouchstart=()=>players[1].controls.jump=true;
 jump2.ontouchend=()=>players[1].controls.jump=false;
 
-/* EMOTES */
+/* ================= EMOTES ================= */
 const emotes = ["😺","🔥","❤","😂","😮"];
 let emoteIndex = 0;
+
 emoteBtn.onclick = ()=>{
   const p = players[0];
   p.emote = emotes[emoteIndex++ % emotes.length];
   p.emoteTime = Date.now() + 2000;
 };
 
-/* MAPA */
+/* ================= MAPA ================= */
 const platforms = [
-  {x:0,y:()=>canvas.height-40,w:3000,h:40}
+  {x:0, y:()=>canvas.height-40, w:3000, h:40}
 ];
 
-/* DRAW RIKCAT DEFINITIVO */
+/* ================= DRAW RIKCAT ================= */
 function drawRikcat(p){
-  ctx.fillStyle=p.color;
-
   // orelhas atrás
+  ctx.fillStyle=p.color;
   ctx.beginPath();
-  ctx.arc(p.x+6,p.y+4,6,0,Math.PI*2);
-  ctx.arc(p.x+p.w-6,p.y+4,6,0,Math.PI*2);
+  ctx.arc(p.x+6,p.y+6,6,0,Math.PI*2);
+  ctx.arc(p.x+p.w-6,p.y+6,6,0,Math.PI*2);
   ctx.fill();
 
   // corpo
@@ -128,20 +132,22 @@ function drawRikcat(p){
   ctx.stroke();
 }
 
-/* ONLINE RECEIVE */
-onValue(ref(db,"players"),snap=>{
-  const d=snap.val();
-  if(!d) return;
-  players.forEach(p=>{
-    if(d[p.name]){
-      p.x=d[p.name].x;
-      p.y=d[p.name].y;
-      p.emote=d[p.name].emote;
-    }
+/* ================= ONLINE RECEIVE ================= */
+if(db){
+  onValue(ref(db,"players"),snap=>{
+    const d=snap.val();
+    if(!d) return;
+    players.forEach(p=>{
+      if(d[p.name]){
+        p.x=d[p.name].x;
+        p.y=d[p.name].y;
+        p.emote=d[p.name].emote;
+      }
+    });
   });
-});
+}
 
-/* START */
+/* ================= START ================= */
 function startGame(isMulti){
   multiplayer=isMulti;
   titleScreen.style.display="none";
@@ -154,13 +160,14 @@ function startGame(isMulti){
 soloBtn.onclick=()=>startGame(false);
 multiBtn.onclick=()=>startGame(true);
 
-/* LOOP */
+/* ================= LOOP ================= */
 function update(){
   requestAnimationFrame(update);
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
+  // plataformas
+  ctx.fillStyle="#8B4513";
   platforms.forEach(p=>{
-    ctx.fillStyle="#8B4513";
     ctx.fillRect(p.x,p.y(),p.w,p.h);
   });
 
@@ -172,7 +179,8 @@ function update(){
     if(p.controls.right)p.vx=4;
 
     if(p.controls.jump && p.onGround){
-      p.vy=-12;p.onGround=false;
+      p.vy=-12;
+      p.onGround=false;
     }
 
     p.vy+=0.6;
@@ -182,21 +190,30 @@ function update(){
     p.onGround=false;
     platforms.forEach(pl=>{
       const py=pl.y();
-      if(p.x<p.l+pl.w && p.x+p.w>pl.x &&
-         p.y<py+pl.h && p.y+p.h>py && p.vy>0){
-        p.y=py-p.h;p.vy=0;p.onGround=true;
+      if(
+        p.x < pl.x + pl.w &&
+        p.x + p.w > pl.x &&
+        p.y < py + pl.h &&
+        p.y + p.h > py &&
+        p.vy > 0
+      ){
+        p.y = py - p.h;
+        p.vy = 0;
+        p.onGround = true;
       }
     });
 
     drawRikcat(p);
 
-    if(p.emote && p.emoteTime>Date.now()){
+    // emote
+    if(p.emote && p.emoteTime > Date.now()){
       ctx.font="24px sans-serif";
       ctx.textAlign="center";
       ctx.fillText(p.emote,p.x+p.w/2,p.y-10);
     }
 
-    if(multiplayer){
+    // online send
+    if(multiplayer && db){
       set(ref(db,"players/"+p.name),{
         x:p.x,y:p.y,emote:p.emote
       });
