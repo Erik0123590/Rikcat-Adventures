@@ -5,36 +5,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Rikcat Adventures v1</title>
 <style>
-    body { margin: 0; overflow: hidden; background: #6aa5ff; font-family: sans-serif; }
+    body { margin: 0; overflow: hidden; background: #6aa5ff; font-family: 'Segoe UI', Tahoma, sans-serif; }
     
-    /* TELAS */
+    /* TELAS INICIAIS */
     #titleScreen, #configScreen {
         position: fixed; inset: 0; background: #6aa5ff;
-        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; z-index: 10;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; z-index: 100;
     }
-    #configScreen { background: rgba(0,0,0,0.9); display: none; z-index: 20; color: white; }
+    #configScreen { background: rgba(0,0,0,0.9); display: none; color: white; }
     
-    .config-box { background: #4a90e2; padding: 25px; border-radius: 15px; display: flex; flex-direction: column; gap: 10px; width: 250px; }
+    .config-box { background: #4a90e2; padding: 25px; border-radius: 15px; display: flex; flex-direction: column; gap: 10px; width: 280px; }
+    .config-box input, .config-box select { padding: 8px; border-radius: 5px; border: none; }
     
-    button { font-size: 20px; padding: 10px 25px; border-radius: 10px; border: none; cursor: pointer; }
+    button { font-size: 18px; padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; background: white; font-weight: bold; }
 
     #rotate { 
         display: none; position: fixed; inset: 0; background: black; color: white; 
-        font-size: 24px; align-items: center; justify-content: center; z-index: 100; 
+        font-size: 24px; align-items: center; justify-content: center; z-index: 200; 
     }
 
     canvas { display: block; }
 
-    /* CONTROLES */
+    /* CONTROLES MOBILE */
     .btn {
-        position: fixed; width: 70px; height: 70px; background: rgba(255,255,255,0.3);
-        border-radius: 50%; font-size: 32px; display: flex; align-items: center; justify-content: center;
-        user-select: none; z-index: 5;
+        position: fixed; width: 65px; height: 65px; background: rgba(255,255,255,0.3);
+        border-radius: 50%; font-size: 28px; display: flex; align-items: center; justify-content: center;
+        user-select: none; z-index: 10;
     }
     #left { bottom: 20px; left: 20px; }
-    #right { bottom: 20px; left: 110px; }
-    #jump { bottom: 20px; right: 20px; }
-    #attack { bottom: 100px; right: 20px; }
+    #right { bottom: 20px; left: 100px; }
+    #jump { bottom: 20px; right: 20px; background: rgba(255,255,255,0.5); }
+    #attack { bottom: 95px; right: 25px; width: 55px; height: 55px; }
 
     /* EMOTES */
     #emoteBtn { position: fixed; top: 15px; right: 15px; font-size: 30px; background: none; z-index: 30; }
@@ -43,8 +44,25 @@
         align-items: center; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 10px; z-index: 30;
     }
     .emote-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
-    .emote { font-size: 24px; background: none; border: none; }
-    .page-btn { font-size: 14px; padding: 5px; background: #fff; width: 100%; }
+    .emote { font-size: 24px; background: none; border: none; cursor: pointer; }
+    .page-btn { font-size: 12px; padding: 5px; background: #eee; width: 100%; color: black; }
+
+    /* CHAT STYLE */
+    #openChatBtn {
+        position: fixed; top: 15px; left: 15px; font-size: 24px; 
+        background: rgba(255,255,255,0.3); border-radius: 50%; width: 50px; height: 50px;
+        display: flex; align-items: center; justify-content: center; z-index: 35;
+    }
+    #chatContainer {
+        position: fixed; top: 75px; left: 15px; width: 250px; height: 180px;
+        background: rgba(0,0,0,0.5); display: none; flex-direction: column;
+        border-radius: 8px; z-index: 40; border: 1px solid rgba(255,255,255,0.2);
+    }
+    #chatBox { flex: 1; overflow-y: auto; padding: 8px; color: white; font-size: 13px; }
+    #chatInput { 
+        width: 100%; border: none; padding: 10px; background: white; 
+        border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; outline: none;
+    }
 </style>
 </head>
 <body>
@@ -58,25 +76,37 @@
 
 <div id="configScreen">
     <div class="config-box">
-        <h2>Ajustes</h2>
+        <h2>⚙️ Ajustes</h2>
+        <label>Seu Nick:</label>
+        <input type="text" id="nickInput" maxlength="15" placeholder="Nick do Gato">
+        
         <label>Personagem:</label>
         <select id="skinSelect">
             <option value="rikcat">Rikcat</option>
             <option value="polvo">Polvo</option>
         </select>
+        
         <label>Cor do Rikcat:</label>
         <input type="color" id="colorSelect" value="#FFB000">
-        <button id="closeConfig">Salvar</button>
+        
+        <button id="closeConfig">Salvar e Voltar</button>
     </div>
 </div>
 
-<div id="rotate">Vire o celular 📱</div>
+<div id="rotate">🔄 Vire o celular para jogar</div>
 
 <div id="game" style="display:none">
     <canvas id="canvas"></canvas>
+    
+    <div id="openChatBtn">💬</div>
+    <div id="chatContainer">
+        <div id="chatBox"></div>
+        <input type="text" id="chatInput" placeholder="Digite algo...">
+    </div>
+
     <div id="left" class="btn">⬅️</div>
     <div id="right" class="btn">➡️</div>
-    <div id="jump" class="btn">⬆️</div>
+    <div id="jump" class="btn">🚀</div>
     <div id="attack" class="btn">🐾</div>
 
     <button id="emoteBtn">😺</button>
