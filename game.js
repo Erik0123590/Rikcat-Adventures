@@ -52,70 +52,92 @@ const keys = {};
 window.onkeydown = e => { if(!chatActive) keys[e.code] = true; };
 window.onkeyup = e => keys[e.code] = false;
 
-/* FUNÇÃO DE DESENHO (SPRITES FOTO 1 E 2) */
+/* FUNÇÃO DE DESENHO MELHORADA */
 function drawPlayer(p) {
     const cx = p.x - cameraX + 16;
-    const by = p.y + 32; // Base exata do chão
+    const by = p.y + 32; 
     
     ctx.save();
     ctx.translate(cx, by);
     ctx.scale(p.facing || 1, p.stretchY || 1);
 
     if (p.skin === "rikcat") {
-        // --- RIKCAT (ESTILO FOTO 2) ---
+        // --- RIKCAT MELHORADO ---
         ctx.lineWidth = 2.5;
         ctx.strokeStyle = "#000";
         
-        // Orelhas Pontudas com Interior Rosa
+        // Orelhas Detalhadas
         ctx.fillStyle = p.color;
         [-1, 1].forEach(side => {
             ctx.save();
             ctx.scale(side, 1);
             ctx.beginPath();
-            ctx.moveTo(-22, -24); 
-            ctx.lineTo(-26, -52); 
-            ctx.lineTo(-6, -38);
+            ctx.moveTo(-20, -28); 
+            ctx.quadraticCurveTo(-28, -55, -26, -58); // Ponta mais fina
+            ctx.lineTo(-6, -42);
             ctx.closePath(); ctx.fill(); ctx.stroke();
             
-            ctx.fillStyle = "#FFB6C1"; // Interior rosa
+            // Interior da orelha
+            ctx.fillStyle = "#FFB6C1";
             ctx.beginPath();
-            ctx.moveTo(-18, -28); ctx.lineTo(-22, -45); ctx.lineTo(-10, -35);
+            ctx.moveTo(-18, -32); ctx.lineTo(-22, -50); ctx.lineTo(-10, -38);
             ctx.closePath(); ctx.fill();
             ctx.restore();
         });
 
-        // Cabeça
+        // Bochechas do Rosto (Efeito gordinho)
         ctx.fillStyle = p.color;
-        ctx.beginPath(); ctx.arc(0, -22, 28, 0, Math.PI * 2);
+        ctx.beginPath();
+        ctx.arc(-12, -18, 12, 0, Math.PI * 2);
+        ctx.arc(12, -18, 12, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cabeça Principal
+        ctx.beginPath(); ctx.arc(0, -24, 26, 0, Math.PI * 2);
         ctx.fill(); ctx.stroke();
 
-        // Olhos e Nariz
+        // Brilho nos Olhos
         ctx.fillStyle = "#000";
-        ctx.fillRect(-12, -30, 5, 12); ctx.fillRect(7, -30, 5, 12);
+        ctx.fillRect(-12, -32, 6, 13); ctx.fillRect(6, -32, 6, 13);
+        ctx.fillStyle = "#FFF";
+        ctx.beginPath(); ctx.arc(-9, -30, 2, 0, Math.PI * 2); ctx.arc(9, -30, 2, 0, Math.PI * 2); ctx.fill();
+
+        // Bochechas Rosadas (Blush)
+        ctx.fillStyle = "rgba(255, 182, 193, 0.6)";
+        ctx.beginPath(); ctx.arc(-16, -18, 5, 0, Math.PI * 2); ctx.arc(16, -18, 5, 0, Math.PI * 2); ctx.fill();
+
+        // Narizinho
         ctx.fillStyle = "#FFB6C1";
-        ctx.beginPath(); ctx.arc(0, -16, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(-3, -14); ctx.lineTo(3, -14); ctx.closePath(); ctx.fill();
 
     } else if (p.skin === "polvo") {
-        // --- POLVO (ESTILO FOTO 1) ---
-        ctx.lineWidth = 2; ctx.strokeStyle = "#000"; ctx.fillStyle = "#FF69B4";
+        // --- POLVO MELHORADO (CORES DINÂMICAS) ---
+        ctx.lineWidth = 2.5; ctx.strokeStyle = "#000"; ctx.fillStyle = p.color;
         
-        // Corpo/Cabeça Oval
-        ctx.beginPath(); ctx.ellipse(0, -25, 22, 26, 0, 0, Math.PI * 2);
+        // Cabeça com brilho
+        ctx.beginPath(); ctx.ellipse(0, -25, 24, 28, 0, 0, Math.PI * 2);
         ctx.fill(); ctx.stroke();
+        
+        ctx.fillStyle = "rgba(255,255,255,0.2)"; // Brilho na cabeça
+        ctx.beginPath(); ctx.ellipse(-8, -35, 8, 10, 0.5, 0, Math.PI * 2); ctx.fill();
 
-        // Olhos Grandes
+        // Olhos Expressivos
         ctx.fillStyle = "#FFF";
-        ctx.beginPath(); ctx.arc(-8, -28, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.arc(8, -28, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(-10, -28, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(10, -28, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.fillStyle = "#000";
-        ctx.beginPath(); ctx.arc(-8, -28, 3, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(8, -28, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(-10, -28, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(10, -28, 4, 0, Math.PI * 2); ctx.fill();
 
-        // Tentáculos
-        ctx.fillStyle = "#FF69B4";
-        [-15, -5, 5, 15].forEach(tx => {
-            ctx.beginPath(); ctx.arc(tx, -4, 6, 0, Math.PI, false);
+        // Tentáculos com Ventosas
+        ctx.fillStyle = p.color;
+        [-16, -6, 6, 16].forEach(tx => {
+            ctx.beginPath(); ctx.arc(tx, -4, 7, 0, Math.PI, false);
             ctx.fill(); ctx.stroke();
+            // Ventosa pequena
+            ctx.fillStyle = "rgba(255,255,255,0.4)";
+            ctx.beginPath(); ctx.arc(tx, -3, 3, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = p.color;
         });
     }
 
@@ -123,7 +145,7 @@ function drawPlayer(p) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = "white"; ctx.font = "bold 14px Arial"; ctx.textAlign = "center";
     ctx.shadowColor = "black"; ctx.shadowBlur = 4;
-    ctx.fillText(p.nick || "Convidado", p.x - cameraX + 16, p.y - 28);
+    ctx.fillText(p.nick || "Convidado", p.x - cameraX + 16, p.y - 35);
     ctx.restore();
 }
 
@@ -155,11 +177,9 @@ function update() {
     });
     rikcat.onGround = ground;
 
-    // Câmera limitada
     cameraX = rikcat.x - canvas.width / 2;
     if (cameraX < 0) cameraX = 0;
 
-    // Desenho do Cenário
     ctx.fillStyle = "#6AA5FF"; ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#8B4513"; 
     platforms.forEach(p => ctx.fillRect(p.x - cameraX, p.realY, p.w, p.h));
@@ -174,7 +194,7 @@ function update() {
     drawPlayer(rikcat);
 }
 
-/* CONTROLE DE TELAS */
+/* START GAME */
 function startGame(online) {
     onlineEnabled = online;
     screens.title.style.display = "none";
@@ -183,7 +203,9 @@ function startGame(online) {
     if(online) {
         onDisconnect(myRef).remove();
         onValue(ref(db, `rooms/${room}/players`), snap => {
-            Object.assign(onlinePlayers, snap.val() || {});
+            const data = snap.val() || {};
+            for (let id in onlinePlayers) if (!data[id]) delete onlinePlayers[id];
+            Object.assign(onlinePlayers, data);
         });
         document.getElementById("openChatBtn").style.display = "flex";
     }
