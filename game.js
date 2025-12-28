@@ -1,9 +1,8 @@
-import { db, ref, set, onValue, onDisconnect } from "./firebase.js";
+import { db, ref, set, onValue, onDisconnect, push } from "./firebase.js";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-// Elementos da Interface
 const screens = {
     title: document.getElementById("titleScreen"),
     config: document.getElementById("configScreen"),
@@ -20,6 +19,7 @@ const FRICTION = 0.8;
 let playing = false;
 let onlineEnabled = false;
 let cameraX = 0;
+let chatActive = false;
 
 /* PLAYER PRINCIPAL */
 const rikcat = {
@@ -28,6 +28,8 @@ const rikcat = {
     onGround: false,
     skin: "rikcat",
     color: "#FFB000",
+    nick: "Convidado",
+    facing: 1,
     emote: null
 };
 
@@ -37,7 +39,6 @@ const playerId = "p_" + Math.floor(Math.random() * 99999);
 const onlinePlayers = {};
 const myRef = ref(db, `rooms/${room}/players/${playerId}`);
 
-/* MAPA */
 const platforms = [
     {x: 0, y: () => canvas.height - 40, w: 3000, h: 40},
     {x: 200, y: () => canvas.height - 130, w: 140, h: 20},
@@ -47,30 +48,71 @@ const platforms = [
 
 /* CONTROLES */
 const keys = {};
-window.onkeydown = e => keys[e.code] = true;
+window.onkeydown = e => { if(!chatActive) keys[e.code] = true; };
 window.onkeyup = e => keys[e.code] = false;
 
 const bindTouch = (id, code) => {
     const el = document.getElementById(id);
-    el.ontouchstart = (e) => { e.preventDefault(); keys[code] = true; };
+    if(!el) return;
+    el.ontouchstart = (e) => { e.preventDefault(); if(!chatActive) keys[code] = true; };
     el.ontouchend = (e) => { e.preventDefault(); keys[code] = false; };
 };
 bindTouch("left", "ArrowLeft");
 bindTouch("right", "ArrowRight");
 bindTouch("jump", "Space");
 
-/* LÓGICA DE EMOTES COM PÁGINAS */
+/* CHAT LÓGICA */
+const openChatBtn = document.getElementById("openChatBtn");
+const chatContainer = document.getElementById("chatContainer");
+const chatInput = document.getElementById("chatInput");
+const chatBox = document.getElementById("chatBox");
+
+if(openChatBtn) {
+    openChatBtn.onclick = () => {
+        chatActive = !chatActive;
+        chatContainer.style.display = chatActive ? "flex" : "none";
+        if(chatActive) chatInput.focus();
+    };
+}
+
+if(chatInput) {
+    chatInput.onkeydown = (e) => {
+        if(e.key === "Enter" && chatInput.value.trim() !== "") {
+            push(ref(db, `rooms/${room}/chat`), {
+                sender: rikcat.nick,
+                text: chatInput.value,
+                time: Date.now()
+            });
+            chatInput.value = "";
+        }
+    };
+}
+
+onValue(ref(db, `rooms/${room}/chat`), snap => {
+    if(!chatBox) return;
+    chatBox.innerHTML = "";
+    const data = snap.val();
+    if(data) {
+        Object.values(data).slice(-30).forEach(m => {
+            const div = document.createElement("div");
+            div.innerHTML = `<b>${m.sender}:</b> ${m.text}`;
+            chatBox.appendChild(div);
+        });
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+});
+
+/* EMOTES */
 const allEmotes = ["😀", "😡", "😴", "💎", "🔥", "⭐", "🤡", "👑", "🍕", "👻"];
 let currentEmotePage = 0;
 const emotesPerPage = 5;
 
 function renderEmoteMenu() {
     const grid = document.getElementById("emoteGrid");
+    if(!grid) return;
     grid.innerHTML = "";
-    const start = currentEmotePage * emotesPerPage;
-    const pageItems = allEmotes.slice(start, start + emotesPerPage);
-
-    pageItems.forEach(emoji => {
+    const items = allEmotes.slice(currentEmotePage * emotesPerPage, (currentEmotePage + 1) * emotesPerPage);
+    items.forEach(emoji => {
         const btn = document.createElement("button");
         btn.className = "emote";
         btn.textContent = emoji;
@@ -97,51 +139,56 @@ document.getElementById("emoteBtn").onclick = () => {
 /* CONFIGURAÇÕES */
 document.getElementById("configBtn").onclick = () => screens.config.style.display = "flex";
 document.getElementById("closeConfig").onclick = () => {
+    const nickVal = document.getElementById("nickInput").value.trim();
+    if(nickVal) rikcat.nick = nickVal;
     rikcat.skin = document.getElementById("skinSelect").value;
     rikcat.color = document.getElementById("colorSelect").value;
     screens.config.style.display = "none";
 };
 
-/* INÍCIO DO JOGO */
-function startGame(online) {
-    onlineEnabled = online;
-    screens.title.style.display = "none";
-    screens.game.style.display = "block";
-    playing = true;
-    if(online) {
-        onDisconnect(myRef).remove();
-        onValue(ref(db, `rooms/${room}/players`), snap => {
-            if(snap.val()) Object.assign(onlinePlayers, snap.val());
-        });
-    }
-    update();
-}
-document.getElementById("soloBtn").onclick = () => startGame(false);
-document.getElementById("multiBtn").onclick = () => startGame(true);
-
-/* ARTE ORIGINAL */
+/* FUNÇÃO DE DESENHO ÚNICA E CORRIGIDA */
 function drawPlayer(p) {
     const x = p.x - cameraX + 16;
     const y = p.y + 16;
     ctx.save();
     ctx.translate(x, y);
+    ctx.scale(p.facing || 1, 1);
 
     if(p.skin === "rikcat"){
+        const outline = "#000", earInside = "#FF2FA3", noseColor = "#FF2FA3";
+        ctx.lineWidth = 3; ctx.strokeStyle = outline; ctx.fillStyle = p.color;
+
         // Orelhas
-        ctx.fillStyle=p.color; ctx.strokeStyle="#000"; ctx.lineWidth=2;
-        ctx.beginPath(); ctx.moveTo(-18,-2); ctx.lineTo(-40,-28); ctx.lineTo(-8,-22); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(18,-2); ctx.lineTo(40,-28); ctx.lineTo(8,-22); ctx.fill(); ctx.stroke();
+        [-1, 1].forEach(s => {
+            ctx.save(); ctx.scale(s, 1);
+            ctx.beginPath(); ctx.moveTo(-22, -8); ctx.lineTo(-24, -35); ctx.lineTo(-5, -20); ctx.closePath(); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = earInside; ctx.beginPath(); ctx.moveTo(-18, -12); ctx.lineTo(-20, -28); ctx.lineTo(-8, -18); ctx.fill();
+            ctx.restore();
+        });
+
         // Cabeça
-        ctx.beginPath(); ctx.arc(0,6,26,0,Math.PI*2); ctx.fill(); ctx.stroke();
-        // Olhos e Rosto
-        ctx.fillStyle="#000"; ctx.fillRect(-8,0,4,14); ctx.fillRect(4,0,4,14);
-        ctx.fillStyle="#FF2FA3"; ctx.beginPath(); ctx.moveTo(0,14); ctx.lineTo(-6,22); ctx.lineTo(6,22); ctx.fill();
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(0, 10, 28, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+        // Olhos
+        ctx.strokeStyle = outline; ctx.lineWidth = 4; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(-10, 2); ctx.lineTo(-10, 14); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(10, 2); ctx.lineTo(10, 14); ctx.stroke();
+
+        // Nariz e Boca
+        ctx.fillStyle = noseColor; ctx.beginPath(); ctx.moveTo(0, 16); ctx.lineTo(-5, 22); ctx.lineTo(5, 22); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = outline; ctx.lineWidth = 2; ctx.beginPath();
+        ctx.moveTo(-6, 26); ctx.bezierCurveTo(-6, 32, -1, 32, 0, 26); ctx.bezierCurveTo(1, 32, 6, 32, 6, 26); ctx.stroke();
     } else {
-        ctx.font = "40px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("🐙", 0, 20);
+        ctx.font = "40px sans-serif"; ctx.textAlign = "center"; ctx.fillText("🐙", 0, 15);
     }
-    if(p.emote) { ctx.font="24px sans-serif"; ctx.textAlign="center"; ctx.fillText(p.emote, 0, -40); }
+
+    // Texto (Nick e Emote) - Desfazemos o flip para o texto não ficar espelhado
+    ctx.scale(p.facing || 1, 1);
+    ctx.fillStyle = "white"; ctx.font = "bold 14px Arial"; ctx.textAlign = "center";
+    ctx.fillText(p.nick || "Convidado", 0, -55);
+    if(p.emote) { ctx.font="24px sans-serif"; ctx.fillText(p.emote, 0, -85); }
+    
     ctx.restore();
 }
 
@@ -150,15 +197,12 @@ function update() {
     if(!playing) return;
     requestAnimationFrame(update);
 
-    // Física Lateral
-    if (keys["ArrowLeft"]) rikcat.vx = -SPEED;
-    else if (keys["ArrowRight"]) rikcat.vx = SPEED;
-    else rikcat.vx *= FRICTION;
+    if(!chatActive) {
+        if (keys["ArrowLeft"]) { rikcat.vx = -SPEED; rikcat.facing = -1; }
+        else if (keys["ArrowRight"]) { rikcat.vx = SPEED; rikcat.facing = 1; }
+        else rikcat.vx *= FRICTION;
 
-    // Pulo
-    if (keys["Space"] && rikcat.onGround) {
-        rikcat.vy = JUMP_FORCE;
-        rikcat.onGround = false;
+        if (keys["Space"] && rikcat.onGround) { rikcat.vy = JUMP_FORCE; rikcat.onGround = false; }
     }
 
     rikcat.vy += GRAVITY;
@@ -166,136 +210,58 @@ function update() {
     rikcat.y += rikcat.vy;
     rikcat.onGround = false;
 
-    // Colisão
     platforms.forEach(p => {
         const py = p.y();
         if (rikcat.x < p.x + p.w && rikcat.x + rikcat.w > p.x &&
             rikcat.y + rikcat.h > py && rikcat.y + rikcat.h < py + p.h && rikcat.vy > 0) {
-            rikcat.y = py - rikcat.h;
-            rikcat.vy = 0;
-            rikcat.onGround = true;
+            rikcat.y = py - rikcat.h; rikcat.vy = 0; rikcat.onGround = true;
         }
     });
 
-    // Respawn
     if (rikcat.y > canvas.height + 100) { rikcat.x = 100; rikcat.y = 100; rikcat.vy = 0; }
 
-    // Câmera
     cameraX = rikcat.x - canvas.width / 2;
     if(cameraX < 0) cameraX = 0;
 
-    // Desenho
-    function drawPlayer(p) {
-    const x = p.x - cameraX + 16;
-    const y = p.y + 16;
-    ctx.save();
-    ctx.translate(x, y);
+    ctx.fillStyle = "#6AA5FF";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#8B4513";
+    platforms.forEach(p => ctx.fillRect(p.x - cameraX, p.y(), p.w, p.h));
 
-    if(p.skin === "rikcat"){
-        const outline = "#000";
-        const earInside = "#FF2FA3";
-        const noseColor = "#FF2FA3";
-
-        // --- ORELHAS (Baseadas na imagem) ---
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = outline;
-        ctx.fillStyle = p.color;
-
-        // Orelha Esquerda
-        ctx.beginPath();
-        ctx.moveTo(-22, -8);
-        ctx.lineTo(-24, -35);
-        ctx.lineTo(-5, -20);
-        ctx.closePath();
-        ctx.fill(); ctx.stroke();
-        
-        // Detalhe Rosa Esquerdo
-        ctx.fillStyle = earInside;
-        ctx.beginPath();
-        ctx.moveTo(-18, -12);
-        ctx.lineTo(-20, -28);
-        ctx.lineTo(-8, -18);
-        ctx.fill();
-
-        // Orelha Direita
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.moveTo(22, -8);
-        ctx.lineTo(24, -35);
-        ctx.lineTo(5, -20);
-        ctx.closePath();
-        ctx.fill(); ctx.stroke();
-
-        // Detalhe Rosa Direito
-        ctx.fillStyle = earInside;
-        ctx.beginPath();
-        ctx.moveTo(18, -12);
-        ctx.lineTo(20, -28);
-        ctx.lineTo(8, -18);
-        ctx.fill();
-
-        // --- CABEÇA (Círculo perfeito da imagem) ---
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(0, 10, 28, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        // --- OLHOS (Traços verticais) ---
-        ctx.strokeStyle = outline;
-        ctx.lineWidth = 4;
-        ctx.lineCap = "round";
-        
-        // Olho Esquerdo
-        ctx.beginPath();
-        ctx.moveTo(-10, 2);
-        ctx.lineTo(-10, 14);
-        ctx.stroke();
-
-        // Olho Direito
-        ctx.beginPath();
-        ctx.moveTo(10, 2);
-        ctx.lineTo(10, 14);
-        ctx.stroke();
-
-        // --- NARIZ (Triângulo rosa pequeno) ---
-        ctx.fillStyle = noseColor;
-        ctx.beginPath();
-        ctx.moveTo(0, 16);
-        ctx.lineTo(-5, 22);
-        ctx.lineTo(5, 22);
-        ctx.closePath();
-        ctx.fill();
-
-        // --- BOCA (Estilo "W" da imagem) ---
-        ctx.strokeStyle = outline;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        // Lado esquerdo do W
-        ctx.moveTo(-6, 26);
-        ctx.bezierCurveTo(-6, 32, -1, 32, 0, 26);
-        // Lado direito do W
-        ctx.bezierCurveTo(1, 32, 6, 32, 6, 26);
-        ctx.stroke();
-
-    } else {
-        // --- POLVO ---
-        ctx.font = "40px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("🐙", 0, 10);
+    if (onlineEnabled) {
+        set(myRef, { 
+            x: rikcat.x, y: rikcat.y, skin: rikcat.skin, color: rikcat.color, 
+            emote: rikcat.emote, nick: rikcat.nick, facing: rikcat.facing 
+        });
+        for (let id in onlinePlayers) if (id !== playerId) drawPlayer(onlinePlayers[id]);
     }
-
-    // --- EMOTE ---
-    if(p.emote) { 
-        ctx.font = "bold 24px sans-serif"; 
-        ctx.textAlign = "center"; 
-        ctx.fillStyle = "white";
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 3;
-        ctx.strokeText(p.emote, 0, -45);
-        ctx.fillText(p.emote, 0, -45); 
-    }
-    
-    ctx.restore();
+    drawPlayer(rikcat);
 }
+
+/* INÍCIO */
+function startGame(online) {
+    onlineEnabled = online;
+    screens.title.style.display = "none";
+    screens.game.style.display = "block";
+    playing = true;
+    if(online) {
+        onDisconnect(myRef).remove();
+        onValue(ref(db, `rooms/${room}/players`), snap => {
+            const players = snap.val() || {};
+            if(rikcat.nick === "Convidado") rikcat.nick = "Convidado_" + (Object.keys(players).length + 1);
+            Object.assign(onlinePlayers, players);
+        });
+    }
+    update();
+}
+
+document.getElementById("soloBtn").onclick = () => startGame(false);
+document.getElementById("multiBtn").onclick = () => startGame(true);
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    screens.rotate.style.display = innerHeight > innerWidth ? "flex" : "none";
+}
+window.onresize = resize;
+resize();
