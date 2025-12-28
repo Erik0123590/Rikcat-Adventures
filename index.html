@@ -3,18 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Rikcat Adventures</title>
+<title>Rikcat Adventures v1</title>
 
 <style>
-*{
-  box-sizing:border-box;
-}
-
 body{
   margin:0;
   overflow:hidden;
   background:#6aa5ff;
-  font-family:sans-serif;
+  font-family: Arial, sans-serif;
 }
 
 /* TELAS */
@@ -40,11 +36,8 @@ body{
   display:none;
 }
 
-/* CANVAS */
 canvas{
   display:block;
-  width:100vw;
-  height:100vh;
 }
 
 /* BOTÕES */
@@ -53,6 +46,7 @@ button{
   padding:12px 30px;
   border-radius:12px;
   border:none;
+  cursor:pointer;
 }
 
 /* CONFIG */
@@ -62,16 +56,8 @@ button{
   border-radius:15px;
   display:flex;
   flex-direction:column;
-  gap:12px;
+  gap:10px;
   width:260px;
-}
-
-.config-box input{
-  padding:10px;
-  font-size:16px;
-  border-radius:8px;
-  border:none;
-  outline:none;
 }
 
 /* CONTROLES MOBILE */
@@ -88,9 +74,9 @@ button{
   user-select:none;
 }
 
-#left{bottom:30px; left:30px;}
-#right{bottom:30px; left:120px;}
-#jump{bottom:30px; right:30px;}
+#left{ bottom:30px; left:30px; }
+#right{ bottom:30px; left:120px; }
+#jump{ bottom:30px; right:30px; }
 
 /* CHAT */
 #openChatBtn{
@@ -105,7 +91,7 @@ button{
   display:none;
   align-items:center;
   justify-content:center;
-  z-index:5;
+  z-index:20;
 }
 
 #chatBoxWrap{
@@ -118,7 +104,7 @@ button{
   display:none;
   flex-direction:column;
   border-radius:10px;
-  z-index:5;
+  z-index:25;
 }
 
 #chatBox{
@@ -133,14 +119,13 @@ button{
   border:none;
   padding:10px;
   outline:none;
-  font-size:14px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- TELA INICIAL -->
+<!-- TELA DE TÍTULO -->
 <div id="titleScreen">
   <h1 style="color:white;">🐱 Rikcat Adventures</h1>
   <button id="soloBtn">Solo</button>
@@ -174,7 +159,8 @@ button{
   <div id="jump" class="btn">⬆️</div>
 </div>
 
-<!-- SCRIPT PRINCIPAL -->
+<!-- SCRIPTS -->
+<script type="module" src="firebase.js"></script>
 <script type="module" src="game.js"></script>
 
 </body>
