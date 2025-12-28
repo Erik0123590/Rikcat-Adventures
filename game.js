@@ -1,3 +1,4 @@
+alert("GAME.JS CARREGOU");
 import { db, ref, set, onValue, onDisconnect, push } from "./firebase.js";
 
 /* ===============================
