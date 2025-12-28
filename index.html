@@ -19,11 +19,6 @@
     
     button { font-size: 18px; padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; background: white; font-weight: bold; }
 
-    #rotate { 
-        display: none; position: fixed; inset: 0; background: black; color: white; 
-        font-size: 24px; align-items: center; justify-content: center; z-index: 200; 
-    }
-
     canvas { display: block; }
 
     /* CONTROLES MOBILE */
@@ -35,23 +30,12 @@
     #left { bottom: 20px; left: 20px; }
     #right { bottom: 20px; left: 100px; }
     #jump { bottom: 20px; right: 20px; background: rgba(255,255,255,0.5); }
-    #attack { bottom: 95px; right: 25px; width: 55px; height: 55px; }
-
-    /* EMOTES */
-    #emoteBtn { position: fixed; top: 15px; right: 15px; font-size: 30px; background: none; z-index: 30; }
-    #emoteMenu {
-        position: fixed; top: 70px; right: 15px; display: none; flex-direction: column;
-        align-items: center; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 10px; z-index: 30;
-    }
-    .emote-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
-    .emote { font-size: 24px; background: none; border: none; cursor: pointer; }
-    .page-btn { font-size: 12px; padding: 5px; background: #eee; width: 100%; color: black; }
 
     /* CHAT STYLE */
     #openChatBtn {
         position: fixed; top: 15px; left: 15px; font-size: 24px; 
         background: rgba(255,255,255,0.3); border-radius: 50%; width: 50px; height: 50px;
-        display: flex; align-items: center; justify-content: center; z-index: 35;
+        display: none; align-items: center; justify-content: center; z-index: 35;
     }
     #chatContainer {
         position: fixed; top: 75px; left: 15px; width: 250px; height: 180px;
@@ -93,12 +77,11 @@
     </div>
 </div>
 
-<div id="rotate">🔄 Vire o celular para jogar</div>
-
 <div id="game" style="display:none">
     <canvas id="canvas"></canvas>
     
     <div id="openChatBtn">💬</div>
+    
     <div id="chatContainer">
         <div id="chatBox"></div>
         <input type="text" id="chatInput" placeholder="Digite algo...">
@@ -106,14 +89,7 @@
 
     <div id="left" class="btn">⬅️</div>
     <div id="right" class="btn">➡️</div>
-    <div id="jump" class="btn">🚀</div>
-    <div id="attack" class="btn">🐾</div>
-
-    <button id="emoteBtn">😺</button>
-    <div id="emoteMenu">
-        <div class="emote-grid" id="emoteGrid"></div>
-        <button id="nextEmotePage" class="page-btn">Próxima Página ➡️</button>
-    </div>
+    <div id="jump" class="btn">⬆️</div>
 </div>
 
 <script type="module" src="game.js"></script>
