@@ -3,9 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Rikcat Adventures v1</title>
+<title>Rikcat Adventures</title>
 
 <style>
+*{
+  box-sizing:border-box;
+}
+
 body{
   margin:0;
   overflow:hidden;
@@ -13,6 +17,7 @@ body{
   font-family:sans-serif;
 }
 
+/* TELAS */
 #titleScreen, #configScreen{
   position:fixed;
   inset:0;
@@ -31,9 +36,18 @@ body{
   color:white;
 }
 
-#game{display:none;}
-canvas{display:block;}
+#game{
+  display:none;
+}
 
+/* CANVAS */
+canvas{
+  display:block;
+  width:100vw;
+  height:100vh;
+}
+
+/* BOTÕES */
 button{
   font-size:20px;
   padding:12px 30px;
@@ -48,11 +62,19 @@ button{
   border-radius:15px;
   display:flex;
   flex-direction:column;
-  gap:10px;
+  gap:12px;
   width:260px;
 }
 
-/* CONTROLES */
+.config-box input{
+  padding:10px;
+  font-size:16px;
+  border-radius:8px;
+  border:none;
+  outline:none;
+}
+
+/* CONTROLES MOBILE */
 .btn{
   position:fixed;
   width:70px;
@@ -83,6 +105,7 @@ button{
   display:none;
   align-items:center;
   justify-content:center;
+  z-index:5;
 }
 
 #chatBoxWrap{
@@ -95,6 +118,7 @@ button{
   display:none;
   flex-direction:column;
   border-radius:10px;
+  z-index:5;
 }
 
 #chatBox{
@@ -109,12 +133,14 @@ button{
   border:none;
   padding:10px;
   outline:none;
+  font-size:14px;
 }
 </style>
 </head>
 
 <body>
 
+<!-- TELA INICIAL -->
 <div id="titleScreen">
   <h1 style="color:white;">🐱 Rikcat Adventures</h1>
   <button id="soloBtn">Solo</button>
@@ -122,6 +148,7 @@ button{
   <button id="configBtn">⚙️ Configurações</button>
 </div>
 
+<!-- CONFIGURAÇÕES -->
 <div id="configScreen">
   <div class="config-box">
     <h3>Configurações</h3>
@@ -130,21 +157,25 @@ button{
   </div>
 </div>
 
+<!-- JOGO -->
 <div id="game">
   <canvas id="canvas"></canvas>
 
+  <!-- CHAT -->
   <div id="openChatBtn">💬</div>
   <div id="chatBoxWrap">
     <div id="chatBox"></div>
     <input id="chatInput" placeholder="Mensagem...">
   </div>
 
+  <!-- CONTROLES -->
   <div id="left" class="btn">⬅️</div>
   <div id="right" class="btn">➡️</div>
-  <div id="jump" class="btn">🚀</div>
+  <div id="jump" class="btn">⬆️</div>
 </div>
 
-<script type="module" src="firebase.js"></script>
+<!-- SCRIPT PRINCIPAL -->
 <script type="module" src="game.js"></script>
+
 </body>
 </html>
