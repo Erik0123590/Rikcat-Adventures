@@ -20,7 +20,6 @@ let onlineEnabled = false;
 let cameraX = 0;
 let chatActive = false;
 
-// Rikcat Hitbox: 32x32. O ponto (x, y) é o canto superior esquerdo.
 const rikcat = {
     x: 100, y: 100, w: 32, h: 32,
     vx: 0, vy: 0, 
@@ -39,18 +38,25 @@ const myRef = ref(db, `rooms/${room}/players/${playerId}`);
 const chatDataRef = ref(db, `rooms/${room}/chat`);
 
 const platforms = [
-    {x: 0, y: () => canvas.height - 40, w: 3000, h: 40},
-    {x: 200, y: () => canvas.height - 130, w: 140, h: 20},
-    {x: 450, y: () => canvas.height - 220, w: 140, h: 20},
-    {x: 700, y: () => canvas.height - 300, w: 140, h: 20}
+    {x: 0, y: 0, h: 40, w: 5000, offset: 40},
+    {x: 200, y: 0, h: 20, w: 140, offset: 130},
+    {x: 450, y: 0, h: 20, w: 140, offset: 220},
+    {x: 700, y: 0, h: 20, w: 140, offset: 300}
 ];
+
+// Atualiza a posição real Y das plataformas baseada na altura da tela
+function updatePlatforms() {
+    platforms.forEach(p => {
+        p.realY = canvas.height - p.offset;
+    });
+}
 
 /* INPUTS */
 const keys = {};
 window.onkeydown = e => { if(!chatActive) keys[e.code] = true; };
 window.onkeyup = e => keys[e.code] = false;
 
-/* CHAT LÓGICA */
+/* LOGICA DO CHAT */
 const chatInput = document.getElementById("chatInput");
 const openChatBtn = document.getElementById("openChatBtn");
 const chatContainer = document.getElementById("chatContainer");
@@ -59,8 +65,8 @@ const chatBox = document.getElementById("chatBox");
 if(openChatBtn) {
     openChatBtn.onclick = () => {
         chatActive = !chatActive;
-        chatContainer.style.display = chatActive ? "flex" : "none";
-        if(chatActive) chatInput.focus();
+        if(chatContainer) chatContainer.style.display = chatActive ? "flex" : "none";
+        if(chatActive && chatInput) chatInput.focus();
     };
 }
 
@@ -84,51 +90,43 @@ onValue(chatDataRef, snap => {
     if(msgs) {
         Object.values(msgs).slice(-30).forEach(m => {
             const div = document.createElement("div");
-            div.innerHTML = `<b>${m.sender}:</b> ${m.text}`;
+            div.style.marginBottom = "4px";
+            div.innerHTML = `<span style="color:#FFD700">●</span> <b>${m.sender}:</b> ${m.text}`;
             chatBox.appendChild(div);
         });
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 });
 
-/* FUNÇÃO DE DESENHO - PÉS NO CHÃO */
+/* DESENHO DO PERSONAGEM */
 function drawPlayer(p) {
-    // A mágica: centralizamos no X, mas no Y usamos a base (p.y + p.h)
-    // Subtraímos um pouco para compensar o arredondado do círculo da cabeça
     const centerX = p.x - cameraX + 16;
-    const baseY = p.y + 32; // A base exata da hitbox no chão
+    const baseY = p.y + 32; 
     
     ctx.save();
     ctx.translate(centerX, baseY);
     ctx.scale(p.facing || 1, p.stretchY || 1);
 
     if(p.skin === "rikcat"){
-        const outline = "#000", earInside = "#FF2FA3", noseColor = "#FF2FA3";
-        ctx.lineWidth = 3; ctx.strokeStyle = outline; ctx.fillStyle = p.color;
-
+        ctx.lineWidth = 3; ctx.strokeStyle = "#000"; ctx.fillStyle = p.color;
         // Orelhas
         [-1, 1].forEach(side => {
             ctx.save(); ctx.scale(side, 1);
             ctx.beginPath(); ctx.moveTo(-22, -24); ctx.lineTo(-24, -51); ctx.lineTo(-5, -36); ctx.closePath(); ctx.fill(); ctx.stroke();
-            ctx.fillStyle = earInside; ctx.beginPath(); ctx.moveTo(-18, -28); ctx.lineTo(-20, -44); ctx.lineTo(-8, -34); ctx.fill();
             ctx.restore();
         });
-
-        // Cabeça (Desenhada para que a base do círculo toque o chão baseY)
-        // Raio 28, então o centro da cabeça fica em -28 para encostar em 0
-        ctx.fillStyle = p.color;
+        // Cabeça
         ctx.beginPath(); ctx.arc(0, -22, 28, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-
-        // Olhos e Rosto
+        // Olhos
         ctx.fillStyle = "#000"; ctx.fillRect(-10, -28, 4, 12); ctx.fillRect(6, -28, 4, 12);
-        ctx.fillStyle = noseColor; ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(-5, -8); ctx.lineTo(5, -8); ctx.closePath(); ctx.fill();
     } else {
-        ctx.font = "40px Arial"; ctx.textAlign = "center"; ctx.fillText("🐙", 0, -5);
+        ctx.font = "40px Arial"; ctx.textAlign = "center"; 
+        ctx.fillText("🐙", 0, -15); // Ajustado para o polvo não atravessar
     }
     
-    // Nickname
     ctx.setTransform(1, 0, 0, 1, 0, 0); 
     ctx.fillStyle = "white"; ctx.font = "bold 14px Arial"; ctx.textAlign = "center";
+    ctx.shadowColor = "black"; ctx.shadowBlur = 4;
     ctx.fillText(p.nick || "Convidado", p.x - cameraX + 16, p.y - 25);
     ctx.restore();
 }
@@ -137,12 +135,16 @@ function drawPlayer(p) {
 function update() {
     if(!playing) return;
     requestAnimationFrame(update);
+    updatePlatforms(); // Garante colisão precisa em qualquer redimensionamento
 
     if(!chatActive) {
-        if (keys["ArrowLeft"]) { rikcat.vx = -SPEED; rikcat.facing = -1; }
-        else if (keys["ArrowRight"]) { rikcat.vx = SPEED; rikcat.facing = 1; }
+        if (keys["ArrowLeft"] || keys["KeyA"]) { rikcat.vx = -SPEED; rikcat.facing = -1; }
+        else if (keys["ArrowRight"] || keys["KeyD"]) { rikcat.vx = SPEED; rikcat.facing = 1; }
         else rikcat.vx *= FRICTION;
-        if (keys["Space"] && rikcat.onGround) { rikcat.vy = JUMP_FORCE; rikcat.onGround = false; rikcat.stretchY = 1.3; }
+        
+        if ((keys["Space"] || keys["ArrowUp"] || keys["KeyW"]) && rikcat.onGround) { 
+            rikcat.vy = JUMP_FORCE; rikcat.onGround = false; rikcat.stretchY = 1.3; 
+        }
     }
 
     rikcat.vy += GRAVITY;
@@ -152,23 +154,24 @@ function update() {
 
     let onGroundThisFrame = false;
     platforms.forEach(p => {
-        const py = p.y();
         if (rikcat.x < p.x + p.w && rikcat.x + rikcat.w > p.x &&
-            rikcat.y + rikcat.h > py && rikcat.y + rikcat.h < py + p.h && rikcat.vy > 0) {
+            rikcat.y + rikcat.h > p.realY && rikcat.y + rikcat.h < p.realY + p.h && rikcat.vy > 0) {
             if(!rikcat.onGround) rikcat.stretchY = 0.7;
-            rikcat.y = py - rikcat.h; // Coloca exatamente em cima da plataforma
+            rikcat.y = p.realY - rikcat.h; 
             rikcat.vy = 0;
             onGroundThisFrame = true;
         }
     });
     rikcat.onGround = onGroundThisFrame;
 
-    if (rikcat.y > canvas.height + 150) { rikcat.x = 100; rikcat.y = 100; rikcat.vy = 0; }
+    if (rikcat.y > canvas.height + 200) { rikcat.x = 100; rikcat.y = 100; rikcat.vy = 0; }
     cameraX = rikcat.x - canvas.width / 2;
     if(cameraX < 0) cameraX = 0;
 
+    // Renderização
     ctx.fillStyle = "#6AA5FF"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#8B4513"; platforms.forEach(p => ctx.fillRect(p.x - cameraX, p.y(), p.w, p.h));
+    ctx.fillStyle = "#8B4513"; 
+    platforms.forEach(p => ctx.fillRect(p.x - cameraX, p.realY, p.w, p.h));
 
     if (onlineEnabled) {
         set(myRef, { 
@@ -180,43 +183,60 @@ function update() {
     drawPlayer(rikcat);
 }
 
-/* INICIALIZAÇÃO */
+/* START GAME */
 function startGame(online) {
     onlineEnabled = online;
-    screens.title.style.display = "none";
-    screens.game.style.display = "block";
+    if(screens.title) screens.title.style.display = "none";
+    if(screens.game) screens.game.style.display = "block";
     playing = true;
 
     if(online) {
-        openChatBtn.style.display = "flex";
+        if(openChatBtn) openChatBtn.style.display = "flex";
         onDisconnect(myRef).remove();
         onValue(ref(db, `rooms/${room}/players`), snap => {
             const data = snap.val() || {};
-            if(Object.keys(data).length === 1 && data[playerId]) remove(chatDataRef); 
-            if(rikcat.nick === "Convidado") rikcat.nick = "Gato_" + (Object.keys(data).length);
+            // Limpa chat se entrar e estiver vazio
+            if(Object.keys(data).length === 0 || (Object.keys(data).length === 1 && data[playerId])) {
+                remove(chatDataRef);
+            }
             for (let id in onlinePlayers) if (!data[id]) delete onlinePlayers[id];
             Object.assign(onlinePlayers, data);
         });
     } else {
-        openChatBtn.style.display = "none";
+        if(openChatBtn) openChatBtn.style.display = "none";
     }
     update();
 }
 
-document.getElementById("soloBtn").onclick = () => startGame(false);
-document.getElementById("multiBtn").onclick = () => startGame(true);
-document.getElementById("configBtn").onclick = () => screens.config.style.display = "flex";
-document.getElementById("closeConfig").onclick = () => {
-    const n = document.getElementById("nickInput").value.trim();
-    if(n) rikcat.nick = n;
-    rikcat.skin = document.getElementById("skinSelect").value;
-    rikcat.color = document.getElementById("colorSelect").value;
-    screens.config.style.display = "none";
-};
+/* EVENTOS */
+document.addEventListener("DOMContentLoaded", () => {
+    resize();
+    document.getElementById("soloBtn").onclick = () => startGame(false);
+    document.getElementById("multiBtn").onclick = () => startGame(true);
+    document.getElementById("configBtn").onclick = () => { if(screens.config) screens.config.style.display = "flex"; };
+    document.getElementById("closeConfig").onclick = () => {
+        const n = document.getElementById("nickInput").value.trim();
+        if(n) rikcat.nick = n;
+        rikcat.skin = document.getElementById("skinSelect").value;
+        rikcat.color = document.getElementById("colorSelect").value;
+        if(screens.config) screens.config.style.display = "none";
+    };
+    
+    // Suporte Mobile
+    const bindTouch = (id, code) => {
+        const el = document.getElementById(id);
+        if(!el) return;
+        el.addEventListener("touchstart", (e) => { e.preventDefault(); keys[code] = true; }, {passive: false});
+        el.addEventListener("touchend", (e) => { e.preventDefault(); keys[code] = false; }, {passive: false});
+    };
+    bindTouch("left", "ArrowLeft");
+    bindTouch("right", "ArrowRight");
+    bindTouch("jump", "Space");
+});
 
 function resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    updatePlatforms();
 }
 window.onresize = resize;
-resize();
