@@ -2,31 +2,139 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Rikcat Adventures</title>
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Rikcat Adventures v1</title>
 
 <style>
-html, body {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  background: #222;
+body{
+  margin:0;
+  overflow:hidden;
+  background:#6aa5ff;
+  font-family:sans-serif;
 }
 
-canvas {
-  display: block;
-  background: #7ec850; /* fase inicial */
+/* TELAS */
+#titleScreen, #configScreen{
+  position:fixed;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  z-index:10;
+}
+#configScreen{
+  background:rgba(0,0,0,0.85);
+  display:none;
+  color:white;
+}
+
+/* GAME */
+#game{display:none;}
+canvas{display:block}
+
+/* BOTÕES */
+button{
+  font-size:18px;
+  padding:12px 28px;
+  border-radius:12px;
+  border:none;
+  font-weight:bold;
+}
+button:active{transform:scale(0.95)}
+
+/* CONTROLES */
+.btn{
+  position:fixed;
+  width:70px;
+  height:70px;
+  border-radius:50%;
+  background:rgba(255,255,255,0.35);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:28px;
+  user-select:none;
+}
+#left{bottom:30px;left:30px}
+#right{bottom:30px;left:120px}
+#jump{bottom:30px;right:30px}
+
+/* CHAT */
+#openChatBtn{
+  position:fixed;
+  top:15px;
+  left:15px;
+  width:50px;
+  height:50px;
+  border-radius:50%;
+  background:rgba(255,255,255,0.4);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  font-size:24px;
+}
+#chatBox{
+  position:fixed;
+  top:80px;
+  left:15px;
+  width:260px;
+  height:180px;
+  background:rgba(0,0,0,0.6);
+  color:white;
+  display:none;
+  flex-direction:column;
+  border-radius:10px;
+}
+#messages{
+  flex:1;
+  padding:8px;
+  overflow-y:auto;
+  font-size:14px;
+}
+#chatInput{
+  border:none;
+  padding:10px;
+  outline:none;
+  border-radius:0 0 10px 10px;
 }
 </style>
 </head>
 
 <body>
 
-<canvas id="game"></canvas>
+<div id="titleScreen">
+  <h1 style="color:white">🐱 Rikcat Adventures</h1>
+  <button id="soloBtn">Solo</button>
+  <button id="multiBtn">Multiplayer</button>
+  <button id="configBtn">⚙️ Configurações</button>
+</div>
 
-<!-- IMPORTANTE: MODULE -->
+<div id="configScreen">
+  <h2>Configurações</h2>
+  <input id="nickInput" placeholder="Seu nick" maxlength="12">
+  <select id="skinSelect">
+    <option value="rikcat">Rikcat</option>
+    <option value="polvo">Polvo</option>
+  </select>
+  <button id="saveConfig">Salvar</button>
+</div>
+
+<div id="game">
+  <canvas id="canvas"></canvas>
+
+  <div id="openChatBtn">💬</div>
+  <div id="chatBox">
+    <div id="messages"></div>
+    <input id="chatInput" placeholder="Mensagem...">
+  </div>
+
+  <div id="left" class="btn">⬅️</div>
+  <div id="right" class="btn">➡️</div>
+  <div id="jump" class="btn">⬆️</div>
+</div>
+
 <script type="module" src="game.js"></script>
-
 </body>
 </html>
