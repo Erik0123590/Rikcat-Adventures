@@ -126,29 +126,31 @@ const platforms = [
 
 /* ====== DRAW FUNCTIONS ====== */
 
-/* drawPlayer: idle (parado) -> totalmente imóvel; walk -> 2-frame walk + bob (tocar chão/flutuar)
-   Não há estado 'air' aqui — você pediu pra remover. */
+// Substitua a função drawPlayer por esta
 function drawPlayer(p) {
-  // coordenadas levando em conta a câmera
+  // posição no canvas (considerando câmera)
   const cx = p.x - camX + p.w / 2;
   const baseY = p.y + p.h / 2;
 
-  // estados
-  const moving = Math.abs(p.vx || 0) > 0.3 && !!p.onGround;
+  // estado: andando quando tem velocidade horizontal e está no chão
+  const moving = Math.abs(p.vx || 0) > 0.5 && !!p.onGround;
 
-  // contador de walk frames
+  // contador interno para animação (criado se inexistente)
   if (p._walkCounter === undefined) p._walkCounter = 0;
   if (moving) p._walkCounter += 1;
   else p._walkCounter = 0;
+
+  // duas frames de caminhada trocando a cada 8 ticks
   const walkFrame = Math.floor(p._walkCounter / 8) % 2;
 
-  // bob: alterna entre "tocar chão" (descer) e "flutuar" (subir)
+  // bob: alterna entre "encostar" e "flutuar"
   const bob = moving ? (walkFrame === 0 ? 4 : -2) : 0;
 
   ctx.save();
+  // translação até o ponto central do personagem, com bob aplicado
   ctx.translate(cx, baseY + bob);
 
-  // espelha apenas quando andando (idle mantém rosto centralizado)
+  // espelha APENAS quando estiver andando
   if (moving) ctx.scale(p.facing || 1, 1);
 
   const bodyColor = p.color || "#FFB000";
@@ -159,132 +161,142 @@ function drawPlayer(p) {
   ctx.strokeStyle = outline;
   ctx.fillStyle = bodyColor;
 
-  // corpo/cabeça
+  /* ===== CORPO no estilo OE5 (ellipse + cabeça) ===== */
+  // corpo (um pouco mais largo que a cabeça)
   ctx.beginPath();
-  ctx.arc(0, 0, 20, 0, Math.PI * 2);
+  ctx.ellipse(0, 8, 20, 14, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
-  // orelhas
+  // cabeça
+  ctx.beginPath();
+  ctx.ellipse(0, -12, 18, 16, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  /* ===== ORELHAS ===== */
   ctx.fillStyle = bodyColor;
   ctx.strokeStyle = outline;
 
   if (!moving) {
-    // IDLE: orelhas laterais
+    // IDLE: orelhas apontando para os lados (mantém rosto central)
+    // esquerda
     ctx.beginPath();
-    ctx.moveTo(-18, -2);
-    ctx.lineTo(-36, -2);
-    ctx.lineTo(-18, -26);
+    ctx.moveTo(-14, -8);
+    ctx.lineTo(-34, -8);
+    ctx.lineTo(-14, -30);
     ctx.closePath();
     ctx.fill(); ctx.stroke();
 
     ctx.fillStyle = earInner;
     ctx.beginPath();
-    ctx.moveTo(-24, -6);
-    ctx.lineTo(-32, -6);
-    ctx.lineTo(-22, -18);
+    ctx.moveTo(-20, -12);
+    ctx.lineTo(-30, -12);
+    ctx.lineTo(-20, -24);
     ctx.closePath();
     ctx.fill();
 
+    // direita
     ctx.fillStyle = bodyColor;
     ctx.beginPath();
-    ctx.moveTo(18, -2);
-    ctx.lineTo(36, -2);
-    ctx.lineTo(18, -26);
+    ctx.moveTo(14, -8);
+    ctx.lineTo(34, -8);
+    ctx.lineTo(14, -30);
     ctx.closePath();
     ctx.fill(); ctx.stroke();
 
     ctx.fillStyle = earInner;
     ctx.beginPath();
-    ctx.moveTo(24, -6);
-    ctx.lineTo(32, -6);
-    ctx.lineTo(22, -18);
+    ctx.moveTo(20, -12);
+    ctx.lineTo(30, -12);
+    ctx.lineTo(20, -24);
     ctx.closePath();
     ctx.fill();
-
   } else {
-    // WALK: orelhas diagonais/para cima
+    // WALK: orelhas inclinadas (dinâmica)
     ctx.beginPath();
-    ctx.moveTo(-12, -12);
-    ctx.lineTo(-30, -28);
-    ctx.lineTo(-4, -30);
+    ctx.moveTo(-10, -18);
+    ctx.lineTo(-28, -34);
+    ctx.lineTo(-6, -36);
     ctx.closePath();
     ctx.fill(); ctx.stroke();
 
     ctx.fillStyle = earInner;
     ctx.beginPath();
-    ctx.moveTo(-18, -14);
-    ctx.lineTo(-24, -26);
-    ctx.lineTo(-6, -26);
+    ctx.moveTo(-16, -20);
+    ctx.lineTo(-24, -32);
+    ctx.lineTo(-10, -30);
     ctx.closePath();
     ctx.fill();
 
     ctx.fillStyle = bodyColor;
     ctx.beginPath();
-    ctx.moveTo(12, -12);
-    ctx.lineTo(30, -28);
-    ctx.lineTo(4, -30);
+    ctx.moveTo(10, -18);
+    ctx.lineTo(28, -34);
+    ctx.lineTo(6, -36);
     ctx.closePath();
     ctx.fill(); ctx.stroke();
 
     ctx.fillStyle = earInner;
     ctx.beginPath();
-    ctx.moveTo(18, -14);
-    ctx.lineTo(24, -26);
-    ctx.lineTo(6, -26);
+    ctx.moveTo(16, -20);
+    ctx.lineTo(24, -32);
+    ctx.lineTo(10, -30);
     ctx.closePath();
     ctx.fill();
   }
 
-  // olhos (2 frames durante o walk)
+  /* ===== ROSTO ===== */
   ctx.fillStyle = "#000";
+  // olhos: frames diferentes para caminhada (simples)
   if (moving) {
     if (walkFrame === 0) {
-      ctx.fillRect(-8, -6, 4, 12);
-      ctx.fillRect(4, -6, 4, 12);
+      ctx.fillRect(-7, -14, 4, 10);
+      ctx.fillRect(3,  -14, 4, 10);
     } else {
-      ctx.fillRect(-8, -2, 4, 8);
-      ctx.fillRect(4, -2, 4, 8);
+      ctx.fillRect(-7, -10, 4, 6);
+      ctx.fillRect(3,  -10, 4, 6);
     }
   } else {
-    ctx.fillRect(-8, -6, 4, 12);
-    ctx.fillRect(4, -6, 4, 12);
+    // idle olhos verticais
+    ctx.fillRect(-7, -14, 4, 10);
+    ctx.fillRect(3,  -14, 4, 10);
   }
 
-  // nariz
+  // nariz (interno das orelhas estilo rosa)
   ctx.fillStyle = earInner;
   ctx.beginPath();
-  ctx.moveTo(0, 2);
-  ctx.lineTo(-5, 10);
-  ctx.lineTo(5, 10);
+  ctx.moveTo(0, -6);
+  ctx.lineTo(-5, -0);
+  ctx.lineTo(5, -0);
   ctx.closePath();
   ctx.fill();
 
-  // boca
+  // boca (w quando idle, sorriso ao andar)
   ctx.strokeStyle = outline;
   ctx.lineWidth = 2;
   if (moving) {
     ctx.beginPath();
-    ctx.moveTo(-6, 14);
-    ctx.quadraticCurveTo(0, 18, 6, 14);
+    ctx.moveTo(-6, 4);
+    ctx.quadraticCurveTo(0, 8, 6, 4);
     ctx.stroke();
   } else {
     ctx.beginPath();
-    ctx.moveTo(-4, 12);
-    ctx.quadraticCurveTo(0, 16, 4, 12);
-    ctx.moveTo(-1, 12);
-    ctx.quadraticCurveTo(0, 15, 1, 12);
+    ctx.moveTo(-4, 2);
+    ctx.quadraticCurveTo(0, 6, 4, 2);
+    ctx.moveTo(-1, 2);
+    ctx.quadraticCurveTo(0, 5, 1, 2);
     ctx.stroke();
   }
 
   ctx.restore();
 
-  // nick
+  /* ===== NICK (fora da transformação) ===== */
   ctx.fillStyle = "white";
   ctx.font = "bold 12px sans-serif";
   ctx.textAlign = "center";
   ctx.fillText(p.nick || "Convidado", cx, p.y - 8);
-}
+  }
 
 /* ====== MAIN LOOP ====== */
 function loop() {
