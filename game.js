@@ -36,6 +36,18 @@ const chatRef = ref(db, `rooms/${room}/chat`);
 
 /* ===== INPUT ===== */
 const keys = {};
+const btnLeft = document.getElementById("left");
+const btnRight = document.getElementById("right");
+const btnJump = document.getElementById("jump");
+
+btnLeft.addEventListener("touchstart", () => keys["ArrowLeft"] = true);
+btnLeft.addEventListener("touchend", () => keys["ArrowLeft"] = false);
+
+btnRight.addEventListener("touchstart", () => keys["ArrowRight"] = true);
+btnRight.addEventListener("touchend", () => keys["ArrowRight"] = false);
+
+btnJump.addEventListener("touchstart", () => keys["Space"] = true);
+btnJump.addEventListener("touchend", () => keys["Space"] = false);
 window.addEventListener("keydown", e => keys[e.code] = true);
 window.addEventListener("keyup", e => keys[e.code] = false);
 
@@ -114,7 +126,7 @@ function loop() {
   if (!playing) return;
   requestAnimationFrame(loop);
 
-  if (!chatOpen) {
+  if (!(chatOpen && document.activeElement === chatInput)) {
     if (keys["ArrowLeft"]) { me.vx = -SPEED; me.facing = -1; }
     else if (keys["ArrowRight"]) { me.vx = SPEED; me.facing = 1; }
     else me.vx *= 0.8;
