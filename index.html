@@ -1,132 +1,63 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Rikcat Adventures – FO1</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+  <title>Rikcat Adventures — FO1 (Base)</title>
   <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: #6aa5ff;
-      font-family: Arial, sans-serif;
-    }
+    body { margin:0; overflow:hidden; background:#6aa5ff; font-family:Arial, sans-serif; }
+    canvas{ display:block; }
 
-    canvas {
-      display: block;
-    }
-
-    /* TELAS */
+    /* title */
     #titleScreen {
-      position: fixed;
-      inset: 0;
-      background: #6aa5ff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
-      z-index: 10;
+      position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:12px; background:#6aa5ff; z-index:10;
     }
+    button { font-size:18px; padding:10px 18px; border-radius:10px; border:none; cursor:pointer; }
 
-    #game {
-      display: none;
-    }
+    /* game UI */
+    #game { display:none; height:100vh; width:100vw; position:relative; }
+    .btn { position:fixed; width:70px; height:70px; background:rgba(255,255,255,0.35);
+           border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:20; user-select:none; }
+    #left { left:20px; bottom:20px; }
+    #right{ left:100px; bottom:20px; }
+    #jump { right:20px; bottom:20px; width:86px; height:86px; }
 
-    button {
-      font-size: 20px;
-      padding: 12px 30px;
-      border-radius: 12px;
-      border: none;
-    }
-
-    /* CONTROLES */
-    .btn {
-      position: fixed;
-      width: 70px;
-      height: 70px;
-      background: rgba(255,255,255,0.4);
-      border-radius: 50%;
-      font-size: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      user-select: none;
-    }
-
-    #left  { bottom: 30px; left: 30px; }
-    #right { bottom: 30px; left: 120px; }
-    #jump  { bottom: 30px; right: 30px; }
-
-    /* CHAT */
-    #openChatBtn {
-      position: fixed;
-      top: 15px;
-      left: 15px;
-      width: 50px;
-      height: 50px;
-      font-size: 24px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.6);
-      display: none;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #chatBoxWrap {
-      position: fixed;
-      top: 80px;
-      left: 15px;
-      width: 260px;
-      height: 200px;
-      background: rgba(0,0,0,0.7);
-      display: none;
-      flex-direction: column;
-      border-radius: 10px;
-    }
-
-    #chatBox {
-      flex: 1;
-      overflow-y: auto;
-      padding: 10px;
-      color: white;
-      font-size: 14px;
-    }
-
-    #chatInput {
-      border: none;
-      padding: 10px;
-      outline: none;
-    }
+    /* chat */
+    #openChatBtn { position:fixed; top:15px; left:15px; width:50px; height:50px; border-radius:50%;
+                   background:rgba(255,255,255,0.6); display:none; align-items:center; justify-content:center; z-index:30; }
+    #chatBoxWrap { position:fixed; top:80px; left:15px; width:280px; height:200px; background:rgba(0,0,0,0.7);
+                   display:none; flex-direction:column; border-radius:10px; z-index:31; overflow:hidden; }
+    #chatBox { flex:1; overflow-y:auto; padding:8px; color:white; font-size:13px; }
+    #chatInput { border:none; padding:8px; outline:none; width:100%; box-sizing:border-box; }
   </style>
 </head>
-
 <body>
 
-<div id="titleScreen">
-  <h1 style="color:white;">🐱 Rikcat Adventures</h1>
-  <button id="soloBtn">Solo</button>
-  <button id="multiBtn">Multiplayer</button>
-</div>
-
-<div id="game">
-  <canvas id="canvas"></canvas>
-
-  <div id="openChatBtn">💬</div>
-  <div id="chatBoxWrap">
-    <div id="chatBox"></div>
-    <input id="chatInput" placeholder="Mensagem...">
+  <div id="titleScreen">
+    <h1 style="color:white; text-shadow:1px 1px #000;">🐱 Rikcat Adventures</h1>
+    <div>
+      <button id="soloBtn" style="background:#4caf50;color:white;">Jogar Solo</button>
+      <button id="multiBtn" style="background:#2196f3;color:white;margin-left:8px;">Multiplayer</button>
+    </div>
   </div>
 
-  <div id="left" class="btn">⬅️</div>
-  <div id="right" class="btn">➡️</div>
-  <div id="jump" class="btn">🚀</div>
-</div>
+  <div id="game">
+    <canvas id="canvas"></canvas>
 
-<!-- IMPORTANTE: ordem correta -->
-<script type="module" src="firebase.js"></script>
-<script type="module" src="game.js"></script>
+    <div id="left" class="btn">⬅️</div>
+    <div id="right" class="btn">➡️</div>
+    <div id="jump" class="btn">🚀</div>
 
+    <div id="openChatBtn">💬</div>
+    <div id="chatBoxWrap">
+      <div id="chatBox"></div>
+      <input id="chatInput" placeholder="Mensagem..." />
+    </div>
+  </div>
+
+  <!-- script modules -->
+  <!-- firebase.js must exist and export db, ref, set, onValue, onDisconnect, push -->
+  <script type="module" src="./game.js"></script>
 </body>
 </html>
