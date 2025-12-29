@@ -1,119 +1,123 @@
-// rikcat.js — OE5 original + stretch on jump & landing
-export function drawRikcat(ctx, p, camX) {
-  const cx = (p.x - (camX || 0)) + (p.w / 2 || 16);
-  const baseY = p.y + (p.h / 2 || 16);
+/* =====================================================
+   Rikcat – OE5 Style (Base)
+   OBS: Visual ainda NÃO está agradável, será melhorado
+   futuramente. Lógica mantida como base.
+===================================================== */
 
-  if (p._prevOnGround === undefined) p._prevOnGround = !!p.onGround;
-  if (p._landTimer === undefined) p._landTimer = 0;
+export class Rikcat {
+  constructor(player) {
+    this.p = player;
 
-  if (!p._prevOnGround && !!p.onGround) {
-    p._landTimer = 12;
-  }
-  p._prevOnGround = !!p.onGround;
+    this.animTime = 0;
+    this.scaleX = 1;
+    this.scaleY = 1;
 
-  let stretchY = 1;
-  let scaleX = 1;
-
-  if (!p.onGround) {
-    const vy = Math.abs(p.vy || 0);
-    const t = Math.min(vy / 20, 0.45);
-    stretchY = 1 + t;
-    scaleX = 1 / stretchY;
-  } else if (p._landTimer > 0) {
-    p._landTimer = Math.max(0, p._landTimer - 1);
-    const progress = 1 - (p._landTimer / 12);
-    stretchY = 0.72 + 0.28 * progress;
-    scaleX = 1 / stretchY;
-  } else {
-    stretchY = 1;
-    scaleX = 1;
+    this.stretchTimer = 0;
   }
 
-  ctx.save();
-  const facing = p.facing === -1 ? -1 : 1;
-  ctx.translate(cx, baseY);
-  ctx.scale(facing * scaleX, stretchY);
+  update() {
+    this.animTime++;
 
-  const bodyColor = p.color || "#FFB000";
-  const outline = "#000";
-  const earInner = "#FF2FA3";
+    // Reset stretch suavemente
+    this.scaleX += (1 - this.scaleX) * 0.2;
+    this.scaleY += (1 - this.scaleY) * 0.2;
 
-  ctx.lineWidth = 2.5;
-  ctx.strokeStyle = outline;
-  ctx.fillStyle = bodyColor;
+    // Stretch apenas no pulo / aterrissagem
+    if (this.stretchTimer > 0) {
+      this.stretchTimer--;
+    }
+  }
 
-  ctx.beginPath();
-  ctx.ellipse(0, 10, 20, 12, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
+  jumpStretch() {
+    this.scaleY = 1.3;
+    this.scaleX = 0.8;
+    this.stretchTimer = 6;
+  }
 
-  ctx.beginPath();
-  ctx.ellipse(0, -12, 16, 16, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
+  landStretch() {
+    this.scaleY = 0.7;
+    this.scaleX = 1.2;
+    this.stretchTimer = 6;
+  }
 
-  ctx.fillStyle = bodyColor;
-  ctx.strokeStyle = outline;
+  draw(ctx, camX) {
+    const p = this.p;
 
-  ctx.beginPath();
-  ctx.moveTo(-12, -8);
-  ctx.lineTo(-36, -8);
-  ctx.lineTo(-12, -30);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
+    const baseX = p.x - camX + p.w / 2;
+    let baseY = p.y + p.h / 2;
 
-  ctx.fillStyle = earInner;
-  ctx.beginPath();
-  ctx.moveTo(-20, -12);
-  ctx.lineTo(-30, -12);
-  ctx.lineTo(-20, -24);
-  ctx.closePath();
-  ctx.fill();
+    let bob = 0;
+    let earTilt = 0;
 
-  ctx.fillStyle = bodyColor;
-  ctx.beginPath();
-  ctx.moveTo(12, -8);
-  ctx.lineTo(36, -8);
-  ctx.lineTo(12, -30);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
+    /* ===== STATE ===== */
+    const walking = Math.abs(p.vx) > 0.5 && p.onGround;
 
-  ctx.fillStyle = earInner;
-  ctx.beginPath();
-  ctx.moveTo(20, -12);
-  ctx.lineTo(30, -12);
-  ctx.lineTo(20, -24);
-  ctx.closePath();
-  ctx.fill();
+    if (walking) {
+      // Andando: encosta no chão e flutua
+      bob = Math.sin(this.animTime * 0.25) * 4;
+      earTilt = Math.sin(this.animTime * 0.25) * 0.2;
+    } else {
+      // Idle: parado, sem flutuação exagerada
+      bob = 0;
+      earTilt = 0;
+    }
 
-  ctx.fillStyle = "#000";
-  ctx.beginPath();
-  ctx.fillRect(-6, -14, 3, 10);
-  ctx.fillRect(4, -14, 3, 10);
+    baseY += bob;
 
-  ctx.fillStyle = earInner;
-  ctx.beginPath();
-  ctx.moveTo(0, -6);
-  ctx.lineTo(-4, 0);
-  ctx.lineTo(4, 0);
-  ctx.closePath();
-  ctx.fill();
+    ctx.save();
+    ctx.translate(baseX, baseY);
+    ctx.scale(p.facing * this.scaleX, this.scaleY);
 
-  ctx.strokeStyle = outline;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(-3, 2);
-  ctx.quadraticCurveTo(0, 6, 3, 2);
-  ctx.moveTo(-1, 2);
-  ctx.quadraticCurveTo(0, 5, 1, 2);
-  ctx.stroke();
+    /* ===== BODY ===== */
+    ctx.fillStyle = p.color || "#ff9900";
+    ctx.beginPath();
+    ctx.ellipse(0, 6, 14, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-  ctx.restore();
+    /* ===== HEAD ===== */
+    ctx.beginPath();
+    ctx.ellipse(0, -8, 12, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-  ctx.fillStyle = "white";
-  ctx.font = "bold 12px Arial";
-  ctx.textAlign = "center";
-  ctx.fillText(p.nick || "Convidado", cx, baseY - 28);
+    /* ===== EARS ===== */
+    ctx.fillStyle = p.color || "#ff9900";
+
+    // Left ear
+    ctx.save();
+    ctx.rotate(-0.6 + earTilt);
+    ctx.beginPath();
+    ctx.ellipse(-10, -18, 4, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Right ear
+    ctx.save();
+    ctx.rotate(0.6 + earTilt);
+    ctx.beginPath();
+    ctx.ellipse(10, -18, 4, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    /* ===== FACE ===== */
+    ctx.fillStyle = "#000";
+
+    // Eyes
+    ctx.beginPath();
+    ctx.arc(-4, -10, 1.5, 0, Math.PI * 2);
+    ctx.arc(4, -10, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Mouth
+    ctx.beginPath();
+    ctx.arc(0, -6, 3, 0, Math.PI);
+    ctx.stroke();
+
+    ctx.restore();
+
+    /* ===== NICK ===== */
+    ctx.fillStyle = "white";
+    ctx.font = "12px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(p.nick, baseX, p.y - 8);
+  }
 }
