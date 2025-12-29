@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
-<title>Rikcat Adventures — FO1</title>
+<title>Rikcat Adventures — FO1 Atualizado</title>
 <style>
   body { margin:0; overflow:hidden; background:#6aa5ff; font-family:sans-serif; }
+  /* telas */
   #titleScreen, #configScreen { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; z-index:50; }
   #configScreen { display:none; background: rgba(0,0,0,0.85); color:white; }
   #game { display:none; position:relative; height:100vh; width:100vw; }
@@ -15,15 +16,18 @@
 
   canvas { display:block; width:100%; height:100%; }
 
+  /* controles */
   .btn { position:fixed; width:70px; height:70px; background:rgba(255,255,255,0.35); border-radius:50%; display:flex; align-items:center; justify-content:center; user-select:none; z-index:20; }
   #left { left:20px; bottom:20px; } 
   #right { left:100px; bottom:20px; }
   #jump { right:20px; bottom:20px; width:84px; height:84px; }
 
+  /* chat */
   #openChatBtn { position:fixed; left:15px; top:15px; width:50px; height:50px; border-radius:50%; display:none; align-items:center; justify-content:center; background:rgba(255,255,255,0.4); z-index:40; }
   #chatContainer { position:fixed; left:15px; top:80px; width:280px; height:220px; display:none; flex-direction:column; background:rgba(0,0,0,0.7); border-radius:8px; z-index:40; overflow:hidden; }
   #chatBox { flex:1; overflow-y:auto; padding:8px; color:white; font-size:13px; }
   #chatInput { border:none; padding:8px; outline:none; }
+
 </style>
 </head>
 <body>
@@ -54,7 +58,7 @@
     <label>Cor (Rikcat)</label>
     <input type="color" id="colorSelect" value="#FFB000" />
     <div style="display:flex; gap:8px; margin-top:8px;">
-      <button id="closeConfig" class="small" style="background:#4caf50;color:white;">Salvar e Voltar</button>
+      <button id="closeConfig" style="background:#4caf50;color:white;">Salvar e Voltar</button>
     </div>
   </div>
 </div>
@@ -63,10 +67,12 @@
 <div id="game">
   <canvas id="canvas"></canvas>
 
+  <!-- CONTROLES -->
   <div id="left" class="btn">⬅️</div>
   <div id="right" class="btn">➡️</div>
-  <div id="jump" class="btn">⬆️</div>
+  <div id="jump" class="btn">🚀</div>
 
+  <!-- CHAT -->
   <div id="openChatBtn">💬</div>
   <div id="chatContainer">
     <div id="chatBox"></div>
