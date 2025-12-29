@@ -1,5 +1,5 @@
 alert("GAME.JS CARREGOU");
-import { db, ref, set, onValue, onDisconnect, push, remove } from "./firebase.js";
+import { db, ref, set, onValue, onDisconnect, push } from "./firebase.js";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -23,7 +23,7 @@ const me = {
   facing: 1,
   nick: "Convidado",
   skin: "rikcat",
-  color: "#FFB000"
+  color: "#00ff00"
 };
 
 let playing = false;
@@ -42,12 +42,11 @@ const btnJump = document.getElementById("jump");
 
 btnLeft.addEventListener("touchstart", () => keys["ArrowLeft"] = true);
 btnLeft.addEventListener("touchend", () => keys["ArrowLeft"] = false);
-
 btnRight.addEventListener("touchstart", () => keys["ArrowRight"] = true);
 btnRight.addEventListener("touchend", () => keys["ArrowRight"] = false);
-
 btnJump.addEventListener("touchstart", () => keys["Space"] = true);
 btnJump.addEventListener("touchend", () => keys["Space"] = false);
+
 window.addEventListener("keydown", e => keys[e.code] = true);
 window.addEventListener("keyup", e => keys[e.code] = false);
 
@@ -95,18 +94,23 @@ const platforms = [
 
 /* ===== DRAW ===== */
 function drawPlayer(p) {
-  const x = p.x - camX + 16;
-  const y = p.y + 16;
+  const cx = p.x - camX + p.w / 2;
+  const cy = p.y + p.h / 2;
+
+  let stretchX = 1 + Math.min(Math.abs(p.vx) / 10, 0.5);
+  let stretchY = 1 - Math.min(Math.abs(p.vx) / 20, 0.3);
+
+  if (!p.onGround) {
+    stretchY -= Math.min(Math.abs(p.vy) / 20, 0.4);
+    stretchX += Math.min(Math.abs(p.vy) / 30, 0.3);
+  }
 
   ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(p.facing, 1);
+  ctx.translate(cx, cy);
+  ctx.scale(p.facing * stretchX, stretchY);
 
   if (p.skin === "rikcat") {
-    ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(0, 0, 16, 0, Math.PI * 2);
-    ctx.fill();
+    drawRikcat(p);
   } else {
     ctx.font = "32px Arial";
     ctx.textAlign = "center";
@@ -118,7 +122,52 @@ function drawPlayer(p) {
   ctx.fillStyle = "white";
   ctx.font = "12px Arial";
   ctx.textAlign = "center";
-  ctx.fillText(p.nick, x, p.y - 8);
+  ctx.fillText(p.nick, cx, p.y - 8);
+}
+
+function drawRikcat(p) {
+  ctx.fillStyle = p.color;
+  ctx.strokeStyle = "black";
+  ctx.lineWidth = 3;
+
+  // cabeça
+  ctx.beginPath();
+  ctx.arc(0, 0, 14, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // orelhas
+  ctx.beginPath();
+  ctx.moveTo(-8, -12);
+  ctx.lineTo(-16, -24);
+  ctx.lineTo(-4, -18);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(8, -12);
+  ctx.lineTo(16, -24);
+  ctx.lineTo(4, -18);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // olhos
+  ctx.beginPath();
+  ctx.moveTo(-5, -2);
+  ctx.lineTo(-5, 4);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(5, -2);
+  ctx.lineTo(5, 4);
+  ctx.stroke();
+
+  // boca
+  ctx.beginPath();
+  ctx.arc(0, 6, 3, 0, Math.PI);
+  ctx.stroke();
 }
 
 /* ===== LOOP ===== */
@@ -186,8 +235,7 @@ function start(isOnline) {
     onDisconnect(myRef).remove();
 
     onValue(ref(db, `rooms/${room}/players`), snap => {
-      const data = snap.val() || {};
-      Object.assign(others, data);
+      Object.assign(others, snap.val() || {});
     });
   }
 
