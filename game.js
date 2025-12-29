@@ -93,133 +93,169 @@ const platforms = [
 ];
 
 /* ===== DRAW ===== */
+// Substitua sua drawPlayer por esta versão (idle >>> imóvel; walk >>> bob tocando o chão)
 function drawPlayer(p) {
-  const cx = p.x - camX + p.w / 2;
-  const cy = p.y + p.h / 2;
+  // coordenadas levando em conta a câmera (mantém seu padrão atual)
+  const x = p.x - camX + 16;   // centro horizontal aproximado
+  const baseY = p.y + 16;      // base vertical aproximada
 
-  let stretchX = 1 + Math.min(Math.abs(p.vx) / 10, 0.5);
-  let stretchY = 1 - Math.min(Math.abs(p.vx) / 20, 0.3);
+  // estado de movimento (andando só quando tiver velocidade perceptível e estiver no chão)
+  const moving = Math.abs(p.vx || 0) > 0.3 && !!p.onGround;
 
-  if (!p.onGround) {
-    stretchY -= Math.min(Math.abs(p.vy) / 20, 0.4);
-    stretchX += Math.min(Math.abs(p.vy) / 30, 0.3);
-  }
+  // contador interno para animação (cria se não existir)
+  if (p._walkCounter === undefined) p._walkCounter = 0;
+  if (moving) p._walkCounter += 1;
+  else p._walkCounter = 0;
+
+  // 2 frames de caminhada (alternam a cada 8 ticks)
+  const walkFrame = Math.floor(p._walkCounter / 8) % 2;
+
+  // bob: quando andando alterna entre "encostar no chão" (valor positivo -> desce)
+  // e "flutuar" (valor negativo -> sobe). Ajuste os valores se quiser maior/menor efeito.
+  const bob = moving ? (walkFrame === 0 ? 4 : -2) : 0;
 
   ctx.save();
-  ctx.translate(cx, cy);
-  ctx.scale(p.facing * stretchX, stretchY);
+  // aplica translação para o ponto onde desenharemos (com bob)
+  ctx.translate(x, baseY + bob);
 
-  if (p.skin === "rikcat") {
-    drawRikcat(p);
+  // somente espelha quando estiver andando (você pediu rosto central no idle)
+  if (moving) ctx.scale(p.facing || 1, 1);
+  // (removi alongamento/air conforme pediu)
+
+  const bodyColor = p.color || "#FFB000";
+  const outline = "#000";
+  const earInner = "#FF2FA3";
+
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = outline;
+  ctx.fillStyle = bodyColor;
+
+  // --- CABEÇA / CORPO (círculo) ---
+  ctx.beginPath();
+  ctx.arc(0, 0, 20, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // --- ORELHAS ---
+  ctx.fillStyle = bodyColor;
+  ctx.strokeStyle = outline;
+
+  if (!moving) {
+    // IDLE: orelhas mais abertas/laterais (rosto central)
+    // orelha esquerda
+    ctx.beginPath();
+    ctx.moveTo(-18, -2);
+    ctx.lineTo(-36, -2);
+    ctx.lineTo(-18, -26);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = earInner;
+    ctx.beginPath();
+    ctx.moveTo(-24, -6);
+    ctx.lineTo(-32, -6);
+    ctx.lineTo(-22, -18);
+    ctx.closePath();
+    ctx.fill();
+
+    // orelha direita
+    ctx.fillStyle = bodyColor;
+    ctx.beginPath();
+    ctx.moveTo(18, -2);
+    ctx.lineTo(36, -2);
+    ctx.lineTo(18, -26);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = earInner;
+    ctx.beginPath();
+    ctx.moveTo(24, -6);
+    ctx.lineTo(32, -6);
+    ctx.lineTo(22, -18);
+    ctx.closePath();
+    ctx.fill();
   } else {
-    ctx.font = "32px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("🐙", 0, 12);
+    // WALK: orelhas mais apontadas/diagonais (dinâmica)
+    ctx.beginPath();
+    ctx.moveTo(-12, -12);
+    ctx.lineTo(-30, -28);
+    ctx.lineTo(-4, -30);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = earInner;
+    ctx.beginPath();
+    ctx.moveTo(-18, -14);
+    ctx.lineTo(-24, -26);
+    ctx.lineTo(-6, -26);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = bodyColor;
+    ctx.beginPath();
+    ctx.moveTo(12, -12);
+    ctx.lineTo(30, -28);
+    ctx.lineTo(4, -30);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = earInner;
+    ctx.beginPath();
+    ctx.moveTo(18, -14);
+    ctx.lineTo(24, -26);
+    ctx.lineTo(6, -26);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // --- OLHOS ---
+  ctx.fillStyle = "#000";
+  if (moving) {
+    // alterna dois "frames" de olhos para dar movimento simples
+    if (walkFrame === 0) {
+      ctx.fillRect(-8, -6, 4, 12);
+      ctx.fillRect(4, -6, 4, 12);
+    } else {
+      ctx.fillRect(-8, -2, 4, 8);
+      ctx.fillRect(4, -2, 4, 8);
+    }
+  } else {
+    // idle: olhos verticais
+    ctx.fillRect(-8, -6, 4, 12);
+    ctx.fillRect(4, -6, 4, 12);
+  }
+
+  // --- NARIZ ---
+  ctx.fillStyle = earInner;
+  ctx.beginPath();
+  ctx.moveTo(0, 2);
+  ctx.lineTo(-5, 10);
+  ctx.lineTo(5, 10);
+  ctx.closePath();
+  ctx.fill();
+
+  // --- BOCA ---
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 2;
+  if (moving) {
+    // boca simples sorridente em movimento
+    ctx.beginPath();
+    ctx.moveTo(-6, 14);
+    ctx.quadraticCurveTo(0, 18, 6, 14);
+    ctx.stroke();
+  } else {
+    // idle: boca "w" fofa
+    ctx.beginPath();
+    ctx.moveTo(-4, 12);
+    ctx.quadraticCurveTo(0, 16, 4, 12);
+    ctx.moveTo(-1, 12);
+    ctx.quadraticCurveTo(0, 15, 1, 12);
+    ctx.stroke();
   }
 
   ctx.restore();
 
+  // --- NICK (fora do transform) ---
   ctx.fillStyle = "white";
-  ctx.font = "12px Arial";
+  ctx.font = "bold 12px sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(p.nick, cx, p.y - 8);
-}
-
-function drawRikcat(p) {
-  ctx.fillStyle = p.color;
-  ctx.strokeStyle = "black";
-  ctx.lineWidth = 3;
-
-  // cabeça
-  ctx.beginPath();
-  ctx.arc(0, 0, 14, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-
-  // orelhas
-  ctx.beginPath();
-  ctx.moveTo(-8, -12);
-  ctx.lineTo(-16, -24);
-  ctx.lineTo(-4, -18);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.moveTo(8, -12);
-  ctx.lineTo(16, -24);
-  ctx.lineTo(4, -18);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // olhos
-  ctx.beginPath();
-  ctx.moveTo(-5, -2);
-  ctx.lineTo(-5, 4);
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.moveTo(5, -2);
-  ctx.lineTo(5, 4);
-  ctx.stroke();
-
-  // boca
-  ctx.beginPath();
-  ctx.arc(0, 6, 3, 0, Math.PI);
-  ctx.stroke();
-}
-
-/* ===== LOOP ===== */
-function loop() {
-  if (!playing) return;
-  requestAnimationFrame(loop);
-
-  if (!(chatOpen && document.activeElement === chatInput)) {
-    if (keys["ArrowLeft"]) { me.vx = -SPEED; me.facing = -1; }
-    else if (keys["ArrowRight"]) { me.vx = SPEED; me.facing = 1; }
-    else me.vx *= 0.8;
-
-    if (keys["Space"] && me.onGround) {
-      me.vy = JUMP;
-      me.onGround = false;
-    }
-  }
-
-  me.vy += GRAVITY;
-  me.x += me.vx;
-  me.y += me.vy;
-
-  me.onGround = false;
-  platforms.forEach(p => {
-    const py = p.y();
-    if (
-      me.x < p.x + p.w &&
-      me.x + me.w > p.x &&
-      me.y + me.h > py &&
-      me.y + me.h < py + p.h &&
-      me.vy > 0
-    ) {
-      me.y = py - me.h;
-      me.vy = 0;
-      me.onGround = true;
-    }
-  });
-
-  camX = Math.max(0, me.x - canvas.width / 2);
-
-  ctx.fillStyle = "#6aa5ff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.fillStyle = "#8b4513";
-  platforms.forEach(p => ctx.fillRect(p.x - camX, p.y(), p.w, p.h));
-
-  if (online) {
-    set(myRef, me);
-    for (let id in others) if (id !== playerId) drawPlayer(others[id]);
-  }
-
-  drawPlayer(me);
+  ctx.fillText(p.nick || "Convidado", x, p.y - 8);
 }
 
 /* ===== START ===== */
