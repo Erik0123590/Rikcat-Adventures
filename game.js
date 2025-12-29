@@ -1,4 +1,5 @@
 alert("GAME.JS CARREGOU");
+alert("AI MEU CUH 😭");
 import { db, ref, set, onValue, onDisconnect, push } from "./firebase.js";
 
 /* ===== CANVAS ===== */
