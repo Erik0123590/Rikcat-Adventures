@@ -1,0 +1,48 @@
+body{
+  margin:0;
+  overflow:hidden;
+  background:#5c94fc;
+  touch-action:none;
+  font-family:sans-serif;
+}
+
+canvas{
+  display:none;
+}
+
+#titleScreen{
+  position:fixed;
+  inset:0;
+  background:#5c94fc;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+}
+
+#titleScreen h1{
+  color:white;
+  font-size:36px;
+}
+
+#titleScreen button{
+  font-size:24px;
+  padding:15px 30px;
+}
+
+#controls{
+  display:none;
+}
+
+.btn{
+  position:fixed;
+  bottom:20px;
+  width:70px;
+  height:70px;
+  background:rgba(255,255,255,0.3);
+  border-radius:50%;
+}
+
+#left{left:20px;}
+#right{left:110px;}
+#jump{right:20px;}
