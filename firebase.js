@@ -1,18 +1,39 @@
-// firebase.js (modular v10)
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, set, onValue, onDisconnect, push, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+// firebase.js — Rikcat Online 2D (Base Estável)
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import {
+  getDatabase,
+  ref,
+  set,
+  push,
+  onValue,
+  remove,
+  onDisconnect
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
+
+// ⚠️ CONFIGURAÇÃO DO SEU PROJETO
 const firebaseConfig = {
-  apiKey: "AIzaSyDCGDk08XGGYOTYnXchuDDrBS0emCm87P0",
-  authDomain: "rikcatonline.firebaseapp.com",
-  databaseURL: "https://rikcatonline-default-rtdb.firebaseio.com",
-  projectId: "rikcatonline",
-  storageBucket: "rikcatonline.firebasestorage.app",
-  messagingSenderId: "504285237002",
-  appId: "1:504285237002:web:9841ceb83ea0fe919674f3"
+  apiKey: "AIzaSyCN1HKOsaar-iCWuMM9XVmOJDBkK8Dmklk",
+  authDomain: "rikcatonline2d.firebaseapp.com",
+  projectId: "rikcatonline2d",
+  storageBucket: "rikcatonline2d.firebasestorage.app",
+  messagingSenderId: "773130395662",
+  appId: "1:773130395662:web:b8d3e3974cddc0f4785c5f"
 };
 
+// 🔥 Inicializa Firebase
 const app = initializeApp(firebaseConfig);
+
+// 🔥 Realtime Database
 const db = getDatabase(app);
 
-export { db, ref, set, onValue, onDisconnect, push, remove };
+// 🔁 EXPORTS (usados no game.js / admin.js)
+export {
+  db,
+  ref,
+  set,
+  push,
+  onValue,
+  remove,
+  onDisconnect
+};
