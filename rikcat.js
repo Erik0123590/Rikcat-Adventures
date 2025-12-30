@@ -1,123 +1,79 @@
-/* =====================================================
-   Rikcat – OE5 Style (Base)
-   OBS: Visual ainda NÃO está agradável, será melhorado
-   futuramente. Lógica mantida como base.
-===================================================== */
+// rikcat.js — Drawn Rikcat (idle/walk bob + jump stretch + nick)
+export function drawRikcat(ctx, p, camX) {
+  if (!p._rk) p._rk = { t:0, prevOnGround:!!p.onGround, landTimer:0, walkCounter:0 };
+  const s = p._rk;
+  s.t++;
 
-export class Rikcat {
-  constructor(player) {
-    this.p = player;
+  // landing detection
+  if (!s.prevOnGround && !!p.onGround) s.landTimer = 12;
+  s.prevOnGround = !!p.onGround;
 
-    this.animTime = 0;
-    this.scaleX = 1;
-    this.scaleY = 1;
+  const walking = Math.abs(p.vx || 0) > 0.5 && p.onGround;
+  if (walking) s.walkCounter++; else s.walkCounter = 0;
 
-    this.stretchTimer = 0;
+  // bob
+  let bob = walking ? Math.sin(s.walkCounter * 0.3) * 3 : Math.sin(s.t * 0.05) * 1.2;
+
+  // stretch/squash
+  let stretchY = 1, stretchX = 1;
+  if (!p.onGround) {
+    const t = Math.min(Math.abs(p.vy || 0) / 20, 0.45);
+    stretchY = 1 + t;
+    stretchX = 1 / stretchY;
+  } else if (s.landTimer > 0) {
+    s.landTimer = Math.max(0, s.landTimer - 1);
+    const prog = 1 - (s.landTimer / 12);
+    stretchY = 0.75 + 0.25 * prog;
+    stretchX = 1 / stretchY;
   }
 
-  update() {
-    this.animTime++;
+  const cx = (p.x - (camX || 0)) + (p.w / 2 || 16);
+  const baseY = p.y + (p.h / 2 || 16) - bob;
 
-    // Reset stretch suavemente
-    this.scaleX += (1 - this.scaleX) * 0.2;
-    this.scaleY += (1 - this.scaleY) * 0.2;
+  ctx.save();
+  const facing = p.facing === -1 ? -1 : 1;
+  ctx.translate(cx, baseY);
+  if (walking) ctx.rotate(0.08 * (p.facing || 1)); // slight tilt
+  ctx.scale(facing * stretchX, stretchY);
 
-    // Stretch apenas no pulo / aterrissagem
-    if (this.stretchTimer > 0) {
-      this.stretchTimer--;
-    }
-  }
+  const bodyColor = p.color || "#FFB000";
+  const inner = "#FF2FA3";
+  const outline = "#000";
 
-  jumpStretch() {
-    this.scaleY = 1.3;
-    this.scaleX = 0.8;
-    this.stretchTimer = 6;
-  }
+  ctx.lineWidth = 2.2;
+  ctx.strokeStyle = outline;
 
-  landStretch() {
-    this.scaleY = 0.7;
-    this.scaleX = 1.2;
-    this.stretchTimer = 6;
-  }
+  // ears (left)
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath(); ctx.moveTo(-14, -18); ctx.lineTo(-30, -38); ctx.lineTo(-6, -28); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = inner; ctx.beginPath(); ctx.moveTo(-18, -22); ctx.lineTo(-26, -32); ctx.lineTo(-12, -26); ctx.closePath(); ctx.fill();
 
-  draw(ctx, camX) {
-    const p = this.p;
+  // ears (right)
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath(); ctx.moveTo(14, -18); ctx.lineTo(30, -38); ctx.lineTo(6, -28); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = inner; ctx.beginPath(); ctx.moveTo(18, -22); ctx.lineTo(26, -32); ctx.lineTo(12, -26); ctx.closePath(); ctx.fill();
 
-    const baseX = p.x - camX + p.w / 2;
-    let baseY = p.y + p.h / 2;
+  // body
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
 
-    let bob = 0;
-    let earTilt = 0;
+  // eyes
+  ctx.fillStyle = "#000";
+  ctx.beginPath(); ctx.arc(-6, -8, 2.2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(6, -8, 2.2, 0, Math.PI * 2); ctx.fill();
 
-    /* ===== STATE ===== */
-    const walking = Math.abs(p.vx) > 0.5 && p.onGround;
+  // nose
+  ctx.fillStyle = inner;
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-3, 4); ctx.lineTo(3, 4); ctx.closePath(); ctx.fill();
 
-    if (walking) {
-      // Andando: encosta no chão e flutua
-      bob = Math.sin(this.animTime * 0.25) * 4;
-      earTilt = Math.sin(this.animTime * 0.25) * 0.2;
-    } else {
-      // Idle: parado, sem flutuação exagerada
-      bob = 0;
-      earTilt = 0;
-    }
+  // mouth
+  ctx.strokeStyle = outline; ctx.lineWidth = 1.8;
+  ctx.beginPath(); ctx.moveTo(-3, 8); ctx.quadraticCurveTo(0, 12, 3, 8); ctx.stroke();
 
-    baseY += bob;
+  ctx.restore();
 
-    ctx.save();
-    ctx.translate(baseX, baseY);
-    ctx.scale(p.facing * this.scaleX, this.scaleY);
-
-    /* ===== BODY ===== */
-    ctx.fillStyle = p.color || "#ff9900";
-    ctx.beginPath();
-    ctx.ellipse(0, 6, 14, 12, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    /* ===== HEAD ===== */
-    ctx.beginPath();
-    ctx.ellipse(0, -8, 12, 10, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    /* ===== EARS ===== */
-    ctx.fillStyle = p.color || "#ff9900";
-
-    // Left ear
-    ctx.save();
-    ctx.rotate(-0.6 + earTilt);
-    ctx.beginPath();
-    ctx.ellipse(-10, -18, 4, 10, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    // Right ear
-    ctx.save();
-    ctx.rotate(0.6 + earTilt);
-    ctx.beginPath();
-    ctx.ellipse(10, -18, 4, 10, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    /* ===== FACE ===== */
-    ctx.fillStyle = "#000";
-
-    // Eyes
-    ctx.beginPath();
-    ctx.arc(-4, -10, 1.5, 0, Math.PI * 2);
-    ctx.arc(4, -10, 1.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Mouth
-    ctx.beginPath();
-    ctx.arc(0, -6, 3, 0, Math.PI);
-    ctx.stroke();
-
-    ctx.restore();
-
-    /* ===== NICK ===== */
-    ctx.fillStyle = "white";
-    ctx.font = "12px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText(p.nick, baseX, p.y - 8);
-  }
+  // nickname
+  ctx.fillStyle = "white"; ctx.font = "bold 12px Arial"; ctx.textAlign = "center";
+  ctx.strokeStyle = "black"; ctx.lineWidth = 2; ctx.strokeText(p.nick || "Player", cx, p.y - 18);
+  ctx.fillText(p.nick || "Player", cx, p.y - 18);
 }
