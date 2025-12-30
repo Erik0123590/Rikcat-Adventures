@@ -1,17 +1,9 @@
-// firebase.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import {
-  getDatabase,
-  ref,
-  set,
-  onValue,
-  onDisconnect,
-  push,
-  remove
-} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+// firebase.js (modular v10)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, onValue, onDisconnect, push, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDCgDKB8ZKGGYOTYnXchuDdRsB0emCm87P0",
+  apiKey: "AIzaSyDCGDk08XGGYOTYnXchuDDrBS0emCm87P0",
   authDomain: "rikcatonline.firebaseapp.com",
   databaseURL: "https://rikcatonline-default-rtdb.firebaseio.com",
   projectId: "rikcatonline",
@@ -23,12 +15,4 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-export {
-  db,
-  ref,
-  set,
-  onValue,
-  onDisconnect,
-  push,
-  remove
-};
+export { db, ref, set, onValue, onDisconnect, push, remove };
