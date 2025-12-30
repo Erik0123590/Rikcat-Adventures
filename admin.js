@@ -2,7 +2,7 @@
 import { ref, push, set, onValue } from "./firebase.js";
 
 // change this to whatever admin password you want
-const ADMIN_PASSWORD = "rikcatADM"; // <- altere se quiser
+const ADMIN_PASSWORD = "RikcatADM!2025"; // <- altere se quiser
 
 export const effects = []; // local cache of effects
 
