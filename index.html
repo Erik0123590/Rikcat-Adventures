@@ -3,109 +3,114 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
-<title>Rikcat Adventures — Fogo Online 1 (Base)</title>
+<title>Rikcat Adventures — Minigames + Online</title>
 <style>
-  body { margin:0; overflow:hidden; background:#6aa5ff; font-family:Arial, sans-serif; }
-  /* telas */
-  #titleScreen, #configScreen { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; z-index:60; }
-  #configScreen { display:none; background: rgba(0,0,0,0.9); color:white; }
+  body { margin:0; overflow:hidden; background:#2f86c9; font-family:sans-serif; }
+  #titleScreen, #configScreen { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; z-index:50; color:white; }
+  #configScreen { display:none; background: rgba(0,0,0,0.85); }
   #game { display:none; position:relative; height:100vh; width:100vw; }
 
-  button { font-size:16px; padding:10px 16px; border-radius:10px; border:none; cursor:pointer; }
-  .config-box { background:#4a90e2; padding:16px; border-radius:12px; width:320px; display:flex; flex-direction:column; gap:8px; box-shadow:0 8px 20px rgba(0,0,0,0.25); }
+  button { font-size:16px; padding:8px 14px; border-radius:10px; border:none; cursor:pointer; }
+  .config-box { background:#4a90e2; padding:18px; border-radius:12px; width:300px; display:flex; flex-direction:column; gap:8px; }
 
   canvas { display:block; width:100%; height:100%; }
 
-  /* controles mobile */
-  .btn { position:fixed; width:70px; height:70px; background:rgba(255,255,255,0.35); border-radius:50%; display:flex; align-items:center; justify-content:center; user-select:none; z-index:30; font-size:26px; }
-  #left { left:16px; bottom:20px; } 
-  #right { left:96px; bottom:20px; }
-  #jump { right:16px; bottom:20px; width:86px; height:86px; font-size:28px; }
+  .btn { position:fixed; width:70px; height:70px; background:rgba(255,255,255,0.35); border-radius:50%; display:flex; align-items:center; justify-content:center; user-select:none; z-index:20; }
+  #left { left:20px; bottom:20px; } 
+  #right { left:100px; bottom:20px; }
+  #jump { right:20px; bottom:20px; width:84px; height:84px; }
 
-  /* chat */
-  #openChatBtn { position:fixed; left:16px; top:16px; width:50px; height:50px; border-radius:50%; display:none; align-items:center; justify-content:center; background:rgba(255,255,255,0.6); z-index:40; font-size:20px; }
-  #chatContainer { position:fixed; left:16px; top:78px; width:300px; height:220px; display:none; flex-direction:column; background:rgba(0,0,0,0.75); border-radius:10px; z-index:41; overflow:hidden; }
+  #fireBtn { position:fixed; right:110px; bottom:120px; width:64px; height:64px; border-radius:50%; display:none; z-index:22; font-size:28px; border:none; background:linear-gradient(180deg,#ffb74d,#ff5722); }
+
+  #openChatBtn { position:fixed; left:15px; top:15px; width:50px; height:50px; border-radius:50%; display:none; align-items:center; justify-content:center; background:rgba(255,255,255,0.4); z-index:40; }
+  #chatContainer { position:fixed; left:15px; top:80px; width:280px; height:220px; display:none; flex-direction:column; background:rgba(0,0,0,0.7); border-radius:8px; z-index:40; overflow:hidden; }
   #chatBox { flex:1; overflow-y:auto; padding:8px; color:white; font-size:13px; }
-  #chatInput { border:none; padding:8px; outline:none; width:100%; box-sizing:border-box; }
+  #chatInput { border:none; padding:8px; outline:none; }
 
-  /* admin modal */
-  #adminModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); align-items:center; justify-content:center; z-index:80; }
-  #adminInner { background:white; color:#111; padding:16px; border-radius:10px; width:320px; }
-
-  /* fire button */
-  #fireBtn { position:fixed; right:110px; bottom:120px; width:64px; height:64px; border-radius:50%; display:none; z-index:32; font-size:26px; border:none; background:linear-gradient(180deg,#ffb74d,#ff5722); color:white; }
+  /* Minigame menu */
+  #minigameMenu { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:120; align-items:center; justify-content:center; }
+  #minigameMenuInner { background:#fff; padding:18px; border-radius:12px; width:320px; max-width:90%; }
+  .mg-btn { padding:10px; border-radius:8px; border:none; cursor:pointer; background:#2196f3; color:white; width:100%; text-align:left; margin-bottom:8px; }
 </style>
 </head>
 <body>
 
-<!-- TÍTULO -->
+<!-- TITLE -->
 <div id="titleScreen">
-  <h1 style="color:white;text-shadow:1px 1px #000;">🐱 Rikcat Adventures</h1>
-  <div>
+  <h1 style="font-size:36px;margin:0;">🐱 Rikcat Adventures</h1>
+  <div style="display:flex;gap:10px;">
     <button id="soloBtn" style="background:#4caf50;color:white;">Jogar Solo</button>
-    <button id="multiBtn" style="background:#2196f3;color:white;margin-left:8px;">Multiplayer Online</button>
+    <button id="multiBtn" style="background:#2196f3;color:white;">Multiplayer Online</button>
   </div>
   <div style="margin-top:8px;">
-    <button id="configBtn">⚙️ Configurações</button>
+    <button id="minigamesBtn" style="background:#ff9800;color:white;">🎮 Minigames</button>
+    <button id="configBtn" style="margin-left:8px;">⚙️ Configurações</button>
   </div>
 </div>
 
-<!-- CONFIGURAÇÕES -->
+<!-- CONFIG -->
 <div id="configScreen">
   <div class="config-box">
-    <h3 style="margin:0; text-align:center;">⚙️ Configurações</h3>
-
+    <h3 style="margin:0;">⚙️ Configurações</h3>
     <label>Seu Nick</label>
-    <input id="nickInput" placeholder="Nick" maxlength="15" style="padding:8px; border-radius:6px; border:none;" />
-
+    <input id="nickInput" placeholder="Nick" maxlength="15" />
     <label>Personagem</label>
-    <select id="skinSelect" style="padding:8px; border-radius:6px; border:none;">
+    <select id="skinSelect">
       <option value="rikcat">Rikcat</option>
       <option value="polvo">Polvo</option>
     </select>
-
-    <label>Cor (Rikcat)</label>
-    <input type="color" id="colorSelect" value="#FFB000" style="height:36px; border:none; padding:4px;" />
-
-    <div style="display:flex; gap:8px; justify-content:center; margin-top:8px;">
-      <button id="closeConfig" style="background:#4caf50;color:white;">Salvar e Voltar</button>
-      <button id="adminBtn" style="background:#333;color:white;">Código para ADMs 🎮</button>
+    <label>Cor do Rikcat</label>
+    <input type="color" id="colorSelect" value="#FFB000" />
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button id="closeConfig" style="background:#4caf50;color:white; flex:1;">Salvar e Voltar</button>
+      <button id="adminBtn" style="flex:1;">Código para ADMs 🎮</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL ADM -->
-<div id="adminModal">
-  <div id="adminInner">
-    <h3 style="margin:0 0 8px 0;">Código para ADMs 🎮</h3>
-    <input id="adminPass" type="password" placeholder="Digite a senha" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ddd;" />
-    <div style="display:flex; gap:8px; margin-top:10px; justify-content:center;">
-      <button id="adminSubmit" style="background:#4caf50;color:white;">Confirmar</button>
-      <button id="adminCancel" style="background:#f44336;color:white;">Cancelar</button>
+<!-- ADMIN (modal) -->
+<div id="adminScreen" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); align-items:center; justify-content:center; z-index:999;">
+  <div style="background:#fff;padding:18px;border-radius:10px;width:320px;text-align:center;">
+    <h3>Coloque a senha</h3>
+    <input id="adminPass" type="password" placeholder="senha" style="width:100%; padding:8px; margin:8px 0; border-radius:6px;" />
+    <div style="display:flex;gap:8px; justify-content:center;">
+      <button id="adminSubmit" style="background:#4caf50;color:white;padding:8px 12px;border-radius:8px;">OK</button>
+      <button id="adminCancel" style="background:#f44336;color:white;padding:8px 12px;border-radius:8px;">Cancelar</button>
     </div>
   </div>
 </div>
 
-<!-- JOGO -->
+<!-- MINIGAME MENU -->
+<div id="minigameMenu">
+  <div id="minigameMenuInner">
+    <h3 style="margin-top:0">Minigames</h3>
+    <div id="minigameList"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button id="closeMinigameMenu" style="flex:1;">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME -->
 <div id="game">
   <canvas id="canvas"></canvas>
 
-  <!-- CONTROLES -->
-  <div id="left" class="btn">◀️</div>
-  <div id="right" class="btn">▶️</div>
+  <div id="left" class="btn">⬅️</div>
+  <div id="right" class="btn">➡️</div>
   <div id="jump" class="btn">🚀</div>
 
-  <!-- FIRE (aparece para ADM com /PDF) -->
   <button id="fireBtn">🔥</button>
 
-  <!-- CHAT -->
   <div id="openChatBtn">💬</div>
   <div id="chatContainer">
     <div id="chatBox"></div>
-    <input id="chatInput" placeholder="Mensagem..." />
+    <input id="chatInput" placeholder="Digite sua mensagem..." />
   </div>
 </div>
 
+<!-- modules -->
+<script type="module" src="./firebase.js"></script>
+<script type="module" src="./rikcat.js"></script>
 <script type="module" src="./game.js"></script>
 </body>
 </html>
