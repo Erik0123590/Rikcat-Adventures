@@ -1,206 +1,274 @@
-// game.js — Minigames integrator
-// Usa seus módulos em ./minigames/* e o firebase.js já existente.
-// Coloque este arquivo na mesma pasta do index.html
+// game.js
+alert("GAME.JS CARREGOU");
+import { db, ref, set, onValue, onDisconnect, push, remove } from "./firebase.js";
+import { drawRikcat } from "./rikcat.js";
 
-import { db, ref, set, onValue, push, remove, onDisconnect } from "./firebase.js";
-
-// IMPORT dos minigames (os módulos que te enviei)
-import { createTimeTrial } from "./minigames/timeTrial.js";
-import { createTag } from "./minigames/tag.js";
-import { createCTF } from "./minigames/ctf.js";
-import { createSurvival } from "./minigames/survival.js";
-
-/* ===== UI ===== */
-const openMinigames = document.getElementById("openMinigames");
-const minigameMenu = document.getElementById("minigameMenu");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
-const logEl = document.getElementById("log");
-const nickInputTop = document.getElementById("nickInputTop");
-const roomCodeInput = document.getElementById("roomCodeInput");
+function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+window.addEventListener("resize", resize); resize();
 
-const joinBtn = document.getElementById("joinBtn");
-const startBtn = document.getElementById("startBtn");
-const leaveBtn = document.getElementById("leaveBtn");
-const backMenuBtn = document.getElementById("backMenuBtn");
-const mgState = document.getElementById("mgState");
-
-openMinigames.onclick = () => {
-  minigameMenu.style.display = minigameMenu.style.display === "block" ? "none" : "block";
-};
-
-backMenuBtn.onclick = () => { minigameMenu.style.display = "none"; };
-
-function log(...t){
-  const row = document.createElement("div");
-  row.textContent = `[${new Date().toLocaleTimeString()}] ${t.join(" ")}`;
-  logEl.appendChild(row);
-  logEl.scrollTop = logEl.scrollHeight;
-}
-
-/* ===== Canvas resize ===== */
-function resize(){ canvas.width = innerWidth; canvas.height = Math.round(innerHeight * 0.6); }
-window.addEventListener("resize", resize);
-resize();
-
-/* ===== player identity ===== */
+/* CONFIG */
+const GRAVITY = 0.6, JUMP = -12, SPEED = 5;
+const room = "online_salas_1";
 const playerId = "p_" + Math.floor(Math.random()*999999);
-let nick = localStorage.getItem("rk_nick") || (`Player${playerId.slice(-4)}`);
-nickInputTop.value = nick;
-nickInputTop.addEventListener("change", ()=> {
-  nick = nickInputTop.value.trim() || nick;
-  localStorage.setItem("rk_nick", nick);
+
+/* STATE */
+const me = { x:100, y:100, vx:0, vy:0, w:32, h:32, onGround:false, facing:1, nick:"Convidado", skin:"rikcat", color:"#FFB000" };
+let playing=false, online=false, camX=0;
+const others = {};
+const myRef = ref(db, `rooms/${room}/players/${playerId}`);
+const playersRef = ref(db, `rooms/${room}/players`);
+const chatRef = ref(db, `rooms/${room}/chat`);
+
+/* UI refs */
+const screens = { title: document.getElementById("titleScreen"), config: document.getElementById("configScreen"), game: document.getElementById("game") };
+const openChatBtn = document.getElementById("openChatBtn");
+const chatContainer = document.getElementById("chatContainer");
+const chatBox = document.getElementById("chatBox");
+const chatInput = document.getElementById("chatInput");
+const fireBtn = document.getElementById("fireBtn");
+
+if(openChatBtn) openChatBtn.style.display = "none";
+
+/* INPUT */
+window.keys = {};
+window.addEventListener("keydown", e=>{ if(e.code) window.keys[e.code] = true; });
+window.addEventListener("keyup", e=>{ if(e.code) window.keys[e.code] = false; });
+function bindTouch(id,key){ const el=document.getElementById(id); if(!el) return; el.addEventListener("touchstart",e=>{ e.preventDefault(); window.keys[key]=true; },{passive:false}); el.addEventListener("touchend", e=>{ e.preventDefault(); window.keys[key]=false; },{passive:false}); }
+bindTouch("left","ArrowLeft"); bindTouch("right","ArrowRight"); bindTouch("jump","Space");
+
+/* CHAT */
+let chatOpen=false;
+if(openChatBtn) openChatBtn.addEventListener("click", ()=>{ chatOpen=!chatOpen; chatContainer.style.display = chatOpen ? "flex":"none"; if(chatOpen) chatInput.focus(); });
+if(chatInput) chatInput.addEventListener("keydown", e=> {
+  if(e.key === "Enter" && chatInput.value.trim()){
+    push(chatRef, { sender: me.nick, text: chatInput.value.trim(), time: Date.now() });
+    chatInput.value = "";
+  }
+});
+onValue(chatRef, snap => {
+  if(!chatBox) return;
+  chatBox.innerHTML = "";
+  const data = snap.val() || {};
+  Object.values(data).slice(-40).forEach(m=>{
+    const d = document.createElement("div");
+    d.innerHTML = `<b>${m.sender}:</b> ${m.text}`;
+    chatBox.appendChild(d);
+  });
+  chatBox.scrollTop = chatBox.scrollHeight;
 });
 
-/* ===== minigame state ===== */
-let currentMG = null;   // 'timeTrial' | 'tag' | 'ctf' | 'survival'
-let mgInstance = null;  // module instance returned by create*
-let mgRoom = null;      // chosen room code
+/* PLAYERS sync */
+onValue(playersRef, snap=>{
+  const data = snap.val() || {};
+  for (const k in others) if (!data[k]) delete others[k];
+  Object.assign(others, data);
+});
 
-// map of buttons in menu (Entrar)
-document.querySelectorAll('[data-mg]').forEach(btn=>{
-  btn.onclick = (e) => {
-    currentMG = btn.getAttribute('data-mg');
-    log(`Selecionado minigame: ${currentMG}`);
-    // show selected in UI
-    mgState.innerHTML = `Selecionado <b>${currentMG}</b>. Insira room (ou deixe vazio) e clique Join.`;
+/* FIRE (admin effect simple local) */
+fireBtn.addEventListener("click", ()=>{
+  // draw a local effect via push to /rooms/.../effects (light implementation)
+  push(ref(db, `rooms/${room}/effects`), {
+    x: me.x + (me.facing === 1 ? me.w : 0),
+    y: me.y + me.h/2,
+    dir: me.facing,
+    len: 500,
+    duration: 700,
+    createdAt: Date.now()
+  });
+});
+
+/* Efects listener */
+const effects = [];
+onValue(ref(db, `rooms/${room}/effects`), snap=>{
+  const data = snap.val() || {};
+  effects.length = 0;
+  Object.values(data).forEach(e => effects.push(e));
+});
+
+/* PLATFORMS */
+const platforms = [
+  { x:0, y:()=>canvas.height-40, w:3000, h:40 },
+  { x:250, y:()=>canvas.height-120, w:140, h:20 },
+  { x:500, y:()=>canvas.height-200, w:140, h:20 }
+];
+
+/* RENDER effects helper */
+function renderEffects(){
+  const now = Date.now();
+  for(let i = effects.length-1; i>=0; i--){
+    const ef = effects[i];
+    if(!ef) continue;
+    const age = now - (ef.createdAt||0);
+    const dur = ef.duration||700;
+    if(age > dur + 300) continue;
+    const alpha = Math.max(0, 1 - (age/dur));
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.lineWidth = 12;
+    ctx.strokeStyle = "rgba(255,100,0,0.95)";
+    const sx = (ef.x - camX);
+    const sy = ef.y;
+    const ex = sx + (ef.len||400) * (ef.dir||1);
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, sy); ctx.stroke();
+    ctx.restore();
+  }
+}
+
+/* DRAW wrapper */
+function drawPlayerWrapper(p){
+  const proto = {
+    x: p.x||0, y:p.y||0, vx:p.vx||0, vy:p.vy||0,
+    w:p.w||32, h:p.h||32, onGround:!!p.onGround, facing:p.facing||1, nick:p.nick||"Convidado", skin:p.skin||"rikcat", color:p.color||"#FFB000"
   };
-});
+  if(proto.skin === "rikcat"){
+    drawRikcat(ctx, proto, camX);
+  } else {
+    const x = proto.x - camX + proto.w/2;
+    const y = proto.y + proto.h/2;
+    ctx.font = "32px Arial"; ctx.textAlign = "center"; ctx.fillStyle = "white";
+    ctx.fillText("🐙", x, y);
+    ctx.fillStyle = "white"; ctx.font = "12px Arial"; ctx.fillText(proto.nick, x, proto.y-12);
+  }
+}
 
-/* ===== join / start / leave handlers ===== */
-joinBtn.onclick = async () => {
-  if(!currentMG){ log("Escolha um minigame primeiro."); return; }
+/* MAIN loop */
+function loop(){
+  if(!playing) return;
+  requestAnimationFrame(loop);
 
-  mgRoom = roomCodeInput.value.trim() || (`${currentMG}_room`);
-  const room = mgRoom;
-  log(`Entrando em room: ${room} como ${nick} (${playerId})`);
-
-  // create instance based on chosen MG
-  if(mgInstance) { // cleanup previous
-    try{ mgInstance.destroy(); }catch(e){}
-    mgInstance = null;
+  const typing = chatOpen && document.activeElement === chatInput;
+  if(!typing){
+    if(window.keys["ArrowLeft"]) { me.vx = -SPEED; me.facing = -1; }
+    else if(window.keys["ArrowRight"]) { me.vx = SPEED; me.facing = 1; }
+    else me.vx *= 0.8;
+    if(window.keys["Space"] && me.onGround){ me.vy = JUMP; me.onGround = false; }
   }
 
-  if(currentMG === "timeTrial"){
-    mgInstance = createTimeTrial(room);
-    mgInstance.join(playerId, { nick });
-    mgInstance.onUpdate((s)=> onMGUpdate(s));
-  } else if(currentMG === "tag"){
-    mgInstance = createTag(room);
-    mgInstance.join(playerId, { nick });
-    mgInstance.onUpdate(s => onMGUpdate(s));
-  } else if(currentMG === "ctf"){
-    mgInstance = createCTF(room);
-    mgInstance.join(playerId, "red", { nick });
-    mgInstance.onUpdate(s => onMGUpdate(s));
-  } else if(currentMG === "survival"){
-    mgInstance = createSurvival(room);
-    mgInstance.join(playerId, { nick });
-    mgInstance.onUpdate(s => onMGUpdate(s));
-  }
+  me.vy += GRAVITY; me.x += me.vx; me.y += me.vy;
 
-  // show some in-canvas status
-  drawOverlay(`Minigame: ${currentMG} — Room: ${room}\nNick: ${nick}`);
-};
-
-startBtn.onclick = async () => {
-  if(!mgInstance){ log("Entre em um minigame primeiro."); return; }
-  // call the common start (modules used 'start' naming for TimeTrial/Survival; Tag/CTF control via setIt/pickup)
-  try{
-    if(currentMG === "timeTrial"){
-      await mgInstance.start(3); // 3s countdown
-      log("TimeTrial: start pedido.");
-    } else if(currentMG === "survival"){
-      // example wave spawn
-      await mgInstance.startNextWave({ waveNum: 1, spawns: [{type:"grunt", x:400, y:200, delay:2000}] });
-      log("Survival: next wave iniciado.");
-    } else {
-      log("Start não aplicável — use ações específicas (Tag/CTF manual).");
+  // collision with platforms
+  me.onGround = false;
+  for(const p of platforms){
+    const py = p.y();
+    if(me.x < p.x + p.w && me.x + me.w > p.x && me.y + me.h > py && me.y + me.h < py + p.h && me.vy > 0){
+      me.y = py - me.h; me.vy = 0; me.onGround = true;
     }
-  }catch(e){
-    log("Erro ao pedir start:", e.message || e);
   }
-};
 
-leaveBtn.onclick = () => {
-  if(!mgInstance){ log("Nada para sair."); return; }
-  try{
-    mgInstance.leave(playerId);
-    if(mgInstance.destroy) mgInstance.destroy();
-  }catch(e){}
-  mgInstance = null;
-  currentMG = null;
-  mgRoom = null;
-  mgState.innerHTML = "Saída concluída.";
-  drawOverlay("Você saiu do minigame.");
-};
+  if(me.y > canvas.height + 200){ me.x = 100; me.y = 100; me.vy = 0; }
 
-/* ===== helper for displaying state updates coming from DB ===== */
-function onMGUpdate(state){
-  // pretty print partial state in UI
-  try{
-    mgState.innerHTML = `<pre style="color:#fff;max-height:140px;overflow:auto">${JSON.stringify(state, null, 2)}</pre>`;
-    log("Update do minigame recebido.");
-  }catch(e){
-    mgState.textContent = "Erro ao mostrar estado.";
+  camX = Math.max(0, me.x - canvas.width/2);
+
+  // clear
+  ctx.fillStyle = "#6aa5ff"; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = "#8b4513";
+  platforms.forEach(pl => ctx.fillRect(pl.x - camX, pl.y(), pl.w, pl.h));
+
+  // effects behind
+  renderEffects();
+
+  // online sync
+  if(online){
+    set(myRef, { x:me.x, y:me.y, vx:me.vx, vy:me.vy, w:me.w, h:me.h, onGround:me.onGround, facing:me.facing, nick:me.nick, skin:me.skin, color:me.color });
+    for(const id in others) if(id !== playerId) drawPlayerWrapper(others[id]);
   }
+
+  // local draw
+  drawPlayerWrapper(me);
 }
 
-/* ===== quick action buttons drawn on canvas for testing (manual triggers) ===== */
-function drawOverlay(text){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = "#2b7bd6";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = "#fff";
-  ctx.textAlign = "center";
-  ctx.font = "18px sans-serif";
-  const lines = (text||"").split("\n");
-  let y = 40;
-  for(const line of lines){
-    ctx.fillText(line, canvas.width/2, y);
-    y += 26;
-  }
+/* START */
+function start(isOnline){
+  online = !!isOnline; playing = true;
+  screens.title.style.display = "none"; screens.game.style.display = "block";
+  resize();
 
-  // draw simple control hints
-  ctx.font = "14px sans-serif";
-  ctx.fillText("Use o menu de Minigames → selecione → Join → Start/Leave", canvas.width/2, canvas.height - 20);
+  if(online){
+    openChatBtn.style.display = "flex";
+    onDisconnect(myRef).remove();
+    onValue(playersRef, snap=>{
+      const data = snap.val() || {};
+      for(const k in others) if(!data[k]) delete others[k];
+      Object.assign(others, data);
+    });
+  } else {
+    openChatBtn.style.display = "none";
+  }
+  loop();
 }
 
-/* ===== simple loop to keep canvas responsive ===== */
-function tick(){
-  requestAnimationFrame(tick);
-  // nothing heavy, overlay drawn on events
-}
-tick();
-
-/* ===== small helpers for manual mg actions (developer convenience) ===== */
-window.__MG = {
-  join: () => joinBtn.click(),
-  start: () => startBtn.click(),
-  leave: () => leaveBtn.click(),
-  // tag specific helper (invokes setIt on server)
-  tagSetIt: async (targetId) => {
-    if(currentMG !== "tag" || !mgInstance) { log("Tag não ativo."); return; }
-    try{ await mgInstance.setIt(targetId || playerId); log("setIt chamado"); }catch(e){ log("erro setIt", e); }
-  },
-  ctfPickup: async (color) => {
-    if(currentMG !== "ctf" || !mgInstance) { log("CTF não ativo."); return; }
-    try{ const ok = await mgInstance.pickupFlag(color, playerId); log("pickupFlag ->", ok); }catch(e){ log(e); }
-  },
-  ctfCapture: async () => {
-    if(currentMG !== "ctf" || !mgInstance) { log("CTF não ativo."); return; }
-    try{ const ok = await mgInstance.captureFlag(playerId); log("captureFlag ->", ok); }catch(e){ log(e); }
-  },
-  survivalKill: async (spawnId) => {
-    if(currentMG !== "survival" || !mgInstance) { log("Survival não ativo."); return; }
-    try{ mgInstance.removeSpawn(spawnId); log("removeSpawn chamado"); }catch(e){ log(e); }
-  },
-  timeTrialFinish: async (elapsedMs) => {
-    if(currentMG !== "timeTrial" || !mgInstance) { log("TimeTrial não ativo."); return; }
-    try{ mgInstance.reportFinish(playerId, typeof elapsedMs === "number" ? elapsedMs : 12345); log("reportFinish enviado"); }catch(e){ log(e); }
-  }
+/* UI wiring */
+document.getElementById("soloBtn").onclick = ()=> start(false);
+document.getElementById("multiBtn").onclick = ()=> start(true);
+document.getElementById("configBtn").onclick = ()=> screens.config.style.display = "flex";
+document.getElementById("closeConfig").onclick = ()=> {
+  const n = document.getElementById("nickInput").value.trim();
+  if(n) me.nick = n;
+  me.skin = document.getElementById("skinSelect").value;
+  me.color = document.getElementById("colorSelect").value;
+  screens.config.style.display = "none";
 };
 
-drawOverlay("Abra o menu 🎮 Minigames e escolha um minigame para entrar.");
+/* ADMIN password modal simple (local) */
+document.getElementById("adminBtn").onclick = ()=> document.getElementById("adminScreen").style.display = "flex";
+document.getElementById("adminCancel").onclick = ()=> document.getElementById("adminScreen").style.display = "none";
+document.getElementById("adminSubmit").onclick = ()=> {
+  const pass = document.getElementById("adminPass").value;
+  // change this secret to whatever you want
+  if(pass === "minhasenhaADM123"){
+    alert("Comandos de ADM ligados");
+    // reveal fire button and allow /PDF command via chat (server effects already enabled)
+    fireBtn.style.display = "block";
+  } else alert("Senha incorreta");
+  document.getElementById("adminScreen").style.display = "none";
+};
 
-log(`PlayerId: ${playerId} pronto. Nick default: ${nick}`);
+/* MINIGAMES integration */
+const MINIGAMES = [
+  { id: "timeTrial", name: "⏱️ Time Trial" },
+  { id: "platformRace", name: "🏁 Platform Race" },
+  { id: "captureFlag", name: "🏳️ Capture Flag" },
+  { id: "survivalWaves", name: "🌊 Survival Waves" }
+];
+const mgBtn = document.getElementById("minigamesBtn");
+const mgMenu = document.getElementById("minigameMenu");
+const mgList = document.getElementById("minigameList");
+const mgClose = document.getElementById("closeMinigameMenu");
+let activeMinigame = null;
+function buildMinigameList(){
+  mgList.innerHTML = "";
+  MINIGAMES.forEach(m=>{
+    const b = document.createElement("button");
+    b.className = "mg-btn";
+    b.textContent = m.name;
+    b.onclick = ()=> { openMinigame(m.id); mgMenu.style.display = "none"; };
+    mgList.appendChild(b);
+  });
+}
+if(mgBtn) mgBtn.onclick = ()=> { mgMenu.style.display = "flex"; buildMinigameList(); }
+if(mgClose) mgClose.onclick = ()=> mgMenu.style.display = "none";
+
+async function openMinigame(id){
+  if(activeMinigame && activeMinigame.stop) { try{ activeMinigame.stop(); }catch(e){} activeMinigame = null; }
+  screens.title.style.display = "none"; screens.game.style.display = "block"; playing = true;
+  try {
+    let mod;
+    switch(id){
+      case "timeTrial": mod = await import('./minigame_timeTrial.js'); break;
+      case "platformRace": mod = await import('./minigame_platformRace.js'); break;
+      case "captureFlag": mod = await import('./minigame_captureFlag.js'); break;
+      case "survivalWaves": mod = await import('./minigame_survivalWaves.js'); break;
+      default: return;
+    }
+    if(mod && mod.default && mod.default.init){
+      activeMinigame = mod.default;
+      activeMinigame.init({ canvas, ctx, me, onExit: ()=> { if(activeMinigame && activeMinigame.stop) activeMinigame.stop(); activeMinigame=null; playing=false; screens.game.style.display='none'; screens.title.style.display='flex'; } });
+    } else console.warn("minigame inválido", id);
+  } catch(err){ console.error("Erro carregando minigame",id,err); alert("Erro ao carregar minigame"); }
+}
+
+/* init expose for debugging */
+window.__ME = me;
+window.__START = start;
