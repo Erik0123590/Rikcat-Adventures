@@ -1,273 +1,206 @@
-// game.js — FO1 (Fogo Online 1) integrado ao rikcat.js e admin.js
-import { db, ref, set, onValue, onDisconnect, push, remove } from "./firebase.js";
-import { drawRikcat } from "./rikcat.js";
-import * as admin from "./admin.js";
+// game.js — Minigames integrator
+// Usa seus módulos em ./minigames/* e o firebase.js já existente.
+// Coloque este arquivo na mesma pasta do index.html
 
-window.addEventListener("DOMContentLoaded", () => {
+import { db, ref, set, onValue, push, remove, onDisconnect } from "./firebase.js";
 
-  /* CANVAS */
-  const canvas = document.getElementById("canvas");
-  const ctx = canvas.getContext("2d");
-  function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
-  window.addEventListener("resize", resize, { passive:true });
-  resize();
+// IMPORT dos minigames (os módulos que te enviei)
+import { createTimeTrial } from "./minigames/timeTrial.js";
+import { createTag } from "./minigames/tag.js";
+import { createCTF } from "./minigames/ctf.js";
+import { createSurvival } from "./minigames/survival.js";
 
-  /* CONFIG */
-  const GRAVITY = 0.6, JUMP = -12, SPEED = 5;
-  const room = "online_salas_1";
-  const playerId = "p_"+Math.floor(Math.random()*999999);
+/* ===== UI ===== */
+const openMinigames = document.getElementById("openMinigames");
+const minigameMenu = document.getElementById("minigameMenu");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const logEl = document.getElementById("log");
+const nickInputTop = document.getElementById("nickInputTop");
+const roomCodeInput = document.getElementById("roomCodeInput");
 
-  /* DB refs */
-  const playersRef = ref(db, `rooms/${room}/players`);
-  const myRef = ref(db, `rooms/${room}/players/${playerId}`);
-  const chatRef = ref(db, `rooms/${room}/chat`);
-  const effectsRef = ref(db, `rooms/${room}/effects`);
-  // wire admin effects ref
-  admin.wireEffectsRef(effectsRef);
+const joinBtn = document.getElementById("joinBtn");
+const startBtn = document.getElementById("startBtn");
+const leaveBtn = document.getElementById("leaveBtn");
+const backMenuBtn = document.getElementById("backMenuBtn");
+const mgState = document.getElementById("mgState");
 
-  /* STATE */
-  const me = { x:100, y:100, vx:0, vy:0, w:32, h:32, onGround:false, facing:1, nick:"Convidado", skin:"rikcat", color:"#FFB000" };
-  let playing=false, online=false, camX=0;
-  const others = {};
+openMinigames.onclick = () => {
+  minigameMenu.style.display = minigameMenu.style.display === "block" ? "none" : "block";
+};
 
-  /* INPUT */
-  const keys = {};
-  window.addEventListener("keydown", e=> keys[e.code]=true);
-  window.addEventListener("keyup", e=> keys[e.code]=false);
+backMenuBtn.onclick = () => { minigameMenu.style.display = "none"; };
 
-  // touch
-  function bindTouch(id, key) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener("touchstart", e => { e.preventDefault(); keys[key] = true; }, { passive:false });
-    el.addEventListener("touchend",   e => { e.preventDefault(); keys[key] = false; }, { passive:false });
-  }
-  bindTouch("left", "ArrowLeft");
-  bindTouch("right","ArrowRight");
-  bindTouch("jump", "Space");
+function log(...t){
+  const row = document.createElement("div");
+  row.textContent = `[${new Date().toLocaleTimeString()}] ${t.join(" ")}`;
+  logEl.appendChild(row);
+  logEl.scrollTop = logEl.scrollHeight;
+}
 
-  /* CHAT UI */
-  const chatBox = document.getElementById("chatBox");
-  const chatInput = document.getElementById("chatInput");
-  const chatBtn = document.getElementById("openChatBtn");
-  const chatContainer = document.getElementById("chatContainer");
-  let chatOpen = false;
-  if (chatBtn) chatBtn.addEventListener("click", () => {
-    chatOpen = !chatOpen;
-    chatContainer.style.display = chatOpen ? "flex" : "none";
-    if (chatOpen) chatInput.focus();
-  });
-  if (chatInput) chatInput.addEventListener("keydown", e => {
-    if (e.key === "Enter" && chatInput.value.trim()) {
-      const txt = chatInput.value.trim();
-      // special command /PDF triggers enable (for admin)
-      if (txt === "/PDF") {
-        if (!admin.isAdmin()) alert("Você precisa da senha ADM para ativar comandos.");
-        else {
-          admin.enablePdfLocal();
-          document.getElementById("fireBtn").style.display = "block";
-          alert("Poder /PDF ativado — botão de raio disponível.");
-        }
-        chatInput.value = "";
-        return;
-      }
-      push(chatRef, { sender: me.nick, text: txt, time: Date.now() });
-      chatInput.value = "";
-    }
-  });
+/* ===== Canvas resize ===== */
+function resize(){ canvas.width = innerWidth; canvas.height = Math.round(innerHeight * 0.6); }
+window.addEventListener("resize", resize);
+resize();
 
-  onValue(chatRef, snap => {
-    if (!chatBox) return;
-    chatBox.innerHTML = "";
-    const data = snap.val() || {};
-    Object.values(data).slice(-40).forEach(m => {
-      const d = document.createElement("div");
-      d.innerHTML = `<b>${m.sender}:</b> ${m.text}`;
-      chatBox.appendChild(d);
-    });
-    chatBox.scrollTop = chatBox.scrollHeight;
-  });
-
-  /* PLATFORMS */
-  const platforms = [
-    { x:0, y:() => canvas.height - 40, w:3000, h:40 },
-    { x:250, y:() => canvas.height - 120, w:140, h:20 },
-    { x:500, y:() => canvas.height - 200, w:140, h:20 }
-  ];
-
-  /* PLAYERS LISTENER */
-  onValue(playersRef, snap => {
-    const data = snap.val() || {};
-    // cleanup others
-    for (const k in others) if (!data[k]) delete others[k];
-    Object.assign(others, data);
-  });
-
-  /* EFFECTS draw (from admin.effects array) */
-  function renderEffects() {
-    const now = Date.now();
-    // draw DB-synced effects from admin.effects
-    for (let i = admin.effects.length - 1; i >= 0; i--) {
-      const ef = admin.effects[i];
-      if (!ef) { admin.effects.splice(i,1); continue; }
-      const age = now - (ef.createdAt || 0);
-      if (age > (ef.duration || 700) + 400) { admin.effects.splice(i,1); continue; }
-      const alpha = Math.max(0, 1 - (age / (ef.duration || 700)));
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.lineWidth = 12;
-      ctx.strokeStyle = "rgba(255,140,0,0.95)";
-      const startX = (ef.x - camX);
-      const startY = (ef.y);
-      const endX = startX + (ef.len || 400) * (ef.dir || 1);
-      ctx.beginPath();
-      ctx.moveTo(startX, startY);
-      ctx.lineTo(endX, startY);
-      ctx.stroke();
-      // highlight
-      ctx.lineWidth = 2; ctx.strokeStyle = `rgba(255,255,200,${0.5*alpha})`;
-      ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(endX, startY); ctx.stroke();
-      ctx.restore();
-    }
-  }
-
-  /* DRAW wrapper */
-  function drawPlayerWrapper(p) {
-    const proto = {
-      x: p.x || 0, y: p.y || 0, vx: p.vx || 0, vy: p.vy || 0,
-      w: p.w || 32, h: p.h || 32, onGround: !!p.onGround, facing: p.facing || 1,
-      nick: p.nick || "Convidado", skin: p.skin || "rikcat", color: p.color || "#FFB000"
-    };
-    if (proto.skin === "rikcat") drawRikcat(ctx, proto, camX);
-    else {
-      const x = proto.x - camX + proto.w/2;
-      const y = proto.y + proto.h/2;
-      ctx.font = "32px Arial"; ctx.textAlign = "center"; ctx.fillStyle = "white"; ctx.fillText("🐙", x, y);
-      ctx.fillStyle = "white"; ctx.font = "12px Arial"; ctx.fillText(proto.nick, x, proto.y - 12);
-    }
-  }
-
-  /* LOOP */
-  function loop() {
-    if (!playing) return;
-    requestAnimationFrame(loop);
-
-    const typing = chatOpen && document.activeElement === chatInput;
-    if (!typing) {
-      if (keys["ArrowLeft"]) { me.vx = -SPEED; me.facing = -1; }
-      else if (keys["ArrowRight"]) { me.vx = SPEED; me.facing = 1; }
-      else me.vx *= 0.8;
-
-      if (keys["Space"] && me.onGround) { me.vy = JUMP; me.onGround = false; }
-    }
-
-    me.vy += GRAVITY; me.x += me.vx; me.y += me.vy;
-
-    // collisions
-    me.onGround = false;
-    for (const p of platforms) {
-      const py = p.y();
-      if (me.x < p.x + p.w && me.x + me.w > p.x && me.y + me.h > py && me.y + me.h < py + p.h && me.vy > 0) {
-        me.y = py - me.h; me.vy = 0; me.onGround = true;
-      }
-    }
-
-    // camera
-    camX = Math.max(0, me.x - canvas.width/2);
-
-    // clear
-    ctx.fillStyle = "#6aa5ff"; ctx.fillRect(0,0,canvas.width,canvas.height);
-
-    // draw platforms
-    ctx.fillStyle = "#8b4513";
-    for (const pl of platforms) ctx.fillRect(pl.x - camX, pl.y(), pl.w, pl.h);
-
-    // effects
-    renderEffects();
-
-    // online sync draw others
-    if (online) {
-      set(myRef, {
-        x: me.x, y: me.y, vx: me.vx, vy: me.vy, w: me.w, h: me.h, onGround: me.onGround, facing: me.facing, nick: me.nick, skin: me.skin, color: me.color
-      });
-      for (const id in others) {
-        if (id === playerId) continue;
-        drawPlayerWrapper(others[id]);
-      }
-    }
-
-    // draw me
-    drawPlayerWrapper(me);
-  }
-
-  /* START */
-  function start(isOnline) {
-    online = isOnline;
-    playing = true;
-    document.getElementById("titleScreen").style.display = "none";
-    document.getElementById("game").style.display = "block";
-    resize();
-    if (online) {
-      document.getElementById("openChatBtn").style.display = "flex";
-      onDisconnect(myRef).remove();
-      onValue(playersRef, snap => {
-        const data = snap.val() || {};
-        for (const k in others) if (!data[k]) delete others[k];
-        Object.assign(others, data);
-      });
-      // wire admin effects ref already done above
-      document.getElementById("fireBtn").style.display = admin.isAdmin() ? "block" : "none";
-    } else {
-      document.getElementById("openChatBtn").style.display = "none";
-    }
-    loop();
-  }
-
-  document.getElementById("soloBtn").onclick = () => start(false);
-  document.getElementById("multiBtn").onclick = () => start(true);
-
-  /* CONFIG UI wiring */
-  document.getElementById("configBtn").onclick = () => document.getElementById("configScreen").style.display = "flex";
-  document.getElementById("closeConfig").onclick = () => {
-    const n = document.getElementById("nickInput").value.trim(); if (n) me.nick = n;
-    const skin = document.getElementById("skinSelect").value; if (skin) me.skin = skin;
-    const col = document.getElementById("colorSelect").value; if (col) me.color = col;
-    document.getElementById("configScreen").style.display = "none";
-  };
-
-  /* ADM modal */
-  document.getElementById("adminBtn").onclick = () => document.getElementById("adminModal").style.display = "flex";
-  document.getElementById("adminCancel").onclick = () => document.getElementById("adminModal").style.display = "none";
-  document.getElementById("adminSubmit").onclick = () => {
-    const pass = document.getElementById("adminPass").value || "";
-    if (admin.tryPassword(pass)) {
-      alert("Comandos de ADM ligados");
-      document.getElementById("adminModal").style.display = "none";
-      document.getElementById("fireBtn").style.display = "block";
-      admin.enablePdfLocal();
-    } else {
-      alert("Senha incorreta");
-    }
-  };
-
-  /* fire button */
-  const fireBtn = document.getElementById("fireBtn");
-  if (fireBtn) {
-    fireBtn.onclick = () => {
-      if (!admin.isAdmin()) { alert("Somente ADMs"); return; }
-      // spawn effect in front of player
-      const sx = me.x + (me.facing === 1 ? me.w + 6 : -6);
-      const sy = me.y + me.h/2;
-      admin.spawnEffect(sx, sy, me.facing, 700, 700);
-    };
-  }
-
-  /* initial draw of effects (in case DB already has some) */
-  // admin.wireEffectsRef already listening
-
-  // expose
-  window.__ME = me;
-  window.__START = start;
-  window.__ADMIN = admin;
-
+/* ===== player identity ===== */
+const playerId = "p_" + Math.floor(Math.random()*999999);
+let nick = localStorage.getItem("rk_nick") || (`Player${playerId.slice(-4)}`);
+nickInputTop.value = nick;
+nickInputTop.addEventListener("change", ()=> {
+  nick = nickInputTop.value.trim() || nick;
+  localStorage.setItem("rk_nick", nick);
 });
+
+/* ===== minigame state ===== */
+let currentMG = null;   // 'timeTrial' | 'tag' | 'ctf' | 'survival'
+let mgInstance = null;  // module instance returned by create*
+let mgRoom = null;      // chosen room code
+
+// map of buttons in menu (Entrar)
+document.querySelectorAll('[data-mg]').forEach(btn=>{
+  btn.onclick = (e) => {
+    currentMG = btn.getAttribute('data-mg');
+    log(`Selecionado minigame: ${currentMG}`);
+    // show selected in UI
+    mgState.innerHTML = `Selecionado <b>${currentMG}</b>. Insira room (ou deixe vazio) e clique Join.`;
+  };
+});
+
+/* ===== join / start / leave handlers ===== */
+joinBtn.onclick = async () => {
+  if(!currentMG){ log("Escolha um minigame primeiro."); return; }
+
+  mgRoom = roomCodeInput.value.trim() || (`${currentMG}_room`);
+  const room = mgRoom;
+  log(`Entrando em room: ${room} como ${nick} (${playerId})`);
+
+  // create instance based on chosen MG
+  if(mgInstance) { // cleanup previous
+    try{ mgInstance.destroy(); }catch(e){}
+    mgInstance = null;
+  }
+
+  if(currentMG === "timeTrial"){
+    mgInstance = createTimeTrial(room);
+    mgInstance.join(playerId, { nick });
+    mgInstance.onUpdate((s)=> onMGUpdate(s));
+  } else if(currentMG === "tag"){
+    mgInstance = createTag(room);
+    mgInstance.join(playerId, { nick });
+    mgInstance.onUpdate(s => onMGUpdate(s));
+  } else if(currentMG === "ctf"){
+    mgInstance = createCTF(room);
+    mgInstance.join(playerId, "red", { nick });
+    mgInstance.onUpdate(s => onMGUpdate(s));
+  } else if(currentMG === "survival"){
+    mgInstance = createSurvival(room);
+    mgInstance.join(playerId, { nick });
+    mgInstance.onUpdate(s => onMGUpdate(s));
+  }
+
+  // show some in-canvas status
+  drawOverlay(`Minigame: ${currentMG} — Room: ${room}\nNick: ${nick}`);
+};
+
+startBtn.onclick = async () => {
+  if(!mgInstance){ log("Entre em um minigame primeiro."); return; }
+  // call the common start (modules used 'start' naming for TimeTrial/Survival; Tag/CTF control via setIt/pickup)
+  try{
+    if(currentMG === "timeTrial"){
+      await mgInstance.start(3); // 3s countdown
+      log("TimeTrial: start pedido.");
+    } else if(currentMG === "survival"){
+      // example wave spawn
+      await mgInstance.startNextWave({ waveNum: 1, spawns: [{type:"grunt", x:400, y:200, delay:2000}] });
+      log("Survival: next wave iniciado.");
+    } else {
+      log("Start não aplicável — use ações específicas (Tag/CTF manual).");
+    }
+  }catch(e){
+    log("Erro ao pedir start:", e.message || e);
+  }
+};
+
+leaveBtn.onclick = () => {
+  if(!mgInstance){ log("Nada para sair."); return; }
+  try{
+    mgInstance.leave(playerId);
+    if(mgInstance.destroy) mgInstance.destroy();
+  }catch(e){}
+  mgInstance = null;
+  currentMG = null;
+  mgRoom = null;
+  mgState.innerHTML = "Saída concluída.";
+  drawOverlay("Você saiu do minigame.");
+};
+
+/* ===== helper for displaying state updates coming from DB ===== */
+function onMGUpdate(state){
+  // pretty print partial state in UI
+  try{
+    mgState.innerHTML = `<pre style="color:#fff;max-height:140px;overflow:auto">${JSON.stringify(state, null, 2)}</pre>`;
+    log("Update do minigame recebido.");
+  }catch(e){
+    mgState.textContent = "Erro ao mostrar estado.";
+  }
+}
+
+/* ===== quick action buttons drawn on canvas for testing (manual triggers) ===== */
+function drawOverlay(text){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = "#2b7bd6";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = "#fff";
+  ctx.textAlign = "center";
+  ctx.font = "18px sans-serif";
+  const lines = (text||"").split("\n");
+  let y = 40;
+  for(const line of lines){
+    ctx.fillText(line, canvas.width/2, y);
+    y += 26;
+  }
+
+  // draw simple control hints
+  ctx.font = "14px sans-serif";
+  ctx.fillText("Use o menu de Minigames → selecione → Join → Start/Leave", canvas.width/2, canvas.height - 20);
+}
+
+/* ===== simple loop to keep canvas responsive ===== */
+function tick(){
+  requestAnimationFrame(tick);
+  // nothing heavy, overlay drawn on events
+}
+tick();
+
+/* ===== small helpers for manual mg actions (developer convenience) ===== */
+window.__MG = {
+  join: () => joinBtn.click(),
+  start: () => startBtn.click(),
+  leave: () => leaveBtn.click(),
+  // tag specific helper (invokes setIt on server)
+  tagSetIt: async (targetId) => {
+    if(currentMG !== "tag" || !mgInstance) { log("Tag não ativo."); return; }
+    try{ await mgInstance.setIt(targetId || playerId); log("setIt chamado"); }catch(e){ log("erro setIt", e); }
+  },
+  ctfPickup: async (color) => {
+    if(currentMG !== "ctf" || !mgInstance) { log("CTF não ativo."); return; }
+    try{ const ok = await mgInstance.pickupFlag(color, playerId); log("pickupFlag ->", ok); }catch(e){ log(e); }
+  },
+  ctfCapture: async () => {
+    if(currentMG !== "ctf" || !mgInstance) { log("CTF não ativo."); return; }
+    try{ const ok = await mgInstance.captureFlag(playerId); log("captureFlag ->", ok); }catch(e){ log(e); }
+  },
+  survivalKill: async (spawnId) => {
+    if(currentMG !== "survival" || !mgInstance) { log("Survival não ativo."); return; }
+    try{ mgInstance.removeSpawn(spawnId); log("removeSpawn chamado"); }catch(e){ log(e); }
+  },
+  timeTrialFinish: async (elapsedMs) => {
+    if(currentMG !== "timeTrial" || !mgInstance) { log("TimeTrial não ativo."); return; }
+    try{ mgInstance.reportFinish(playerId, typeof elapsedMs === "number" ? elapsedMs : 12345); log("reportFinish enviado"); }catch(e){ log(e); }
+  }
+};
+
+drawOverlay("Abra o menu 🎮 Minigames e escolha um minigame para entrar.");
+
+log(`PlayerId: ${playerId} pronto. Nick default: ${nick}`);
