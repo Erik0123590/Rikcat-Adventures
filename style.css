@@ -1,48 +1,40 @@
-body{
-  margin:0;
-  overflow:hidden;
-  background:#5c94fc;
-  touch-action:none;
-  font-family:sans-serif;
+body {
+  margin: 0;
+  background: #1565c0;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  color: white;
 }
 
-canvas{
-  display:none;
+.hidden {
+  display: none;
 }
 
-#titleScreen{
-  position:fixed;
-  inset:0;
-  background:#5c94fc;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
+#menu, #config {
+  position: absolute;
+  width: 100%;
+  top: 30%;
 }
 
-#titleScreen h1{
-  color:white;
-  font-size:36px;
+button {
+  font-size: 18px;
+  padding: 12px;
+  margin: 6px;
+  border: none;
+  border-radius: 8px;
 }
 
-#titleScreen button{
-  font-size:24px;
-  padding:15px 30px;
+#gameCanvas {
+  display: none;
+  background: #4fc3f7;
 }
 
-#controls{
-  display:none;
+#controls {
+  position: absolute;
+  bottom: 10px;
+  width: 100%;
 }
 
-.btn{
-  position:fixed;
-  bottom:20px;
-  width:70px;
-  height:70px;
-  background:rgba(255,255,255,0.3);
-  border-radius:50%;
+#controls button {
+  font-size: 24px;
 }
-
-#left{left:20px;}
-#right{left:110px;}
-#jump{right:20px;}
