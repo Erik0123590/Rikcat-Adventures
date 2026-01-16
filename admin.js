@@ -1,11 +1,19 @@
-import { Config } from "./config.js";
+// admin.js — FO1
 
-document.getElementById("btnADM").onclick = () => {
-  const senha = prompt("Coloque a senha");
-  if (senha === "RikcatADM!2025") {
+let admAtivo = false;
+const SENHA_ADM = "RikcatADM!2025";
+
+export function pedirSenhaADM() {
+  const senha = prompt("Coloque a senha de ADM:");
+  if (senha === SENHA_ADM) {
+    admAtivo = true;
     alert("Comandos de ADM ligados");
-    Config.admEnabled = true;
-    Config.fireEnabled = true;
-    document.getElementById("btnFire").classList.remove("hidden");
+    document.getElementById("admin-btn").style.display = "block";
+  } else {
+    alert("Senha incorreta");
   }
-};
+}
+
+export function admLigado() {
+  return admAtivo;
+}
