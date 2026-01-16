@@ -1,15 +1,16 @@
 // rikcat.js — Desenho do Rikcat (versão visual base)
+// Exporta drawRikcat(ctx, x, y)
 
 export function drawRikcat(ctx, x, y) {
   ctx.save();
 
-  // Centraliza
+  // center of the sprite
   const cx = x + 20;
   const cy = y + 20;
 
   ctx.translate(cx, cy);
 
-  // CORES
+  // Colors
   const bodyColor = "#FFB000"; // laranja
   const pink = "#FF5FA2";
   const outline = "#000";
@@ -19,7 +20,7 @@ export function drawRikcat(ctx, x, y) {
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
 
-  // === ORELHA ESQUERDA ===
+  // === LEFT EAR ===
   ctx.fillStyle = bodyColor;
   ctx.beginPath();
   ctx.moveTo(-8, -18);
@@ -37,7 +38,7 @@ export function drawRikcat(ctx, x, y) {
   ctx.closePath();
   ctx.fill();
 
-  // === ORELHA DIREITA ===
+  // === RIGHT EAR ===
   ctx.fillStyle = bodyColor;
   ctx.beginPath();
   ctx.moveTo(8, -18);
@@ -55,21 +56,21 @@ export function drawRikcat(ctx, x, y) {
   ctx.closePath();
   ctx.fill();
 
-  // === CORPO ===
+  // === BODY ===
   ctx.fillStyle = bodyColor;
   ctx.beginPath();
   ctx.arc(0, 0, 18, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
-  // === OLHOS ===
+  // === EYES ===
   ctx.fillStyle = outline;
   ctx.beginPath();
   ctx.arc(-6, -4, 2.5, 0, Math.PI * 2);
   ctx.arc(6, -4, 2.5, 0, Math.PI * 2);
   ctx.fill();
 
-  // === NARIZ (triângulo rosa) ===
+  // === NOSE (triangle pink) ===
   ctx.fillStyle = pink;
   ctx.beginPath();
   ctx.moveTo(0, 0);
@@ -78,11 +79,12 @@ export function drawRikcat(ctx, x, y) {
   ctx.closePath();
   ctx.fill();
 
-  // === BOCA ===
+  // === MOUTH ===
   ctx.strokeStyle = outline;
+  ctx.lineWidth = 1.8;
   ctx.beginPath();
   ctx.moveTo(-4, 9);
-  ctx.lineTo(4, 9);
+  ctx.quadraticCurveTo(0, 12, 4, 9);
   ctx.stroke();
 
   ctx.restore();
