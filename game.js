@@ -1,3 +1,4 @@
+import { db, ref, set, onValue } from "./firebase.js";
 import { Config } from "./config.js";
 import { Rikcat } from "./rikcat.js";
 import { setupPlayer } from "./player.js";
