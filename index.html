@@ -1,46 +1,101 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Rikcat Adventures</title>
+  <meta charset="UTF-8">
+  <title>😺Rikcat Adventures😺(FO1, Testes)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+
+  <style>
+    body {
+      margin: 0;
+      background: #1e90ff;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    canvas {
+      background: #87ceeb;
+      display: block;
+    }
+
+    #menu {
+      position: fixed;
+      inset: 0;
+      background: #1e90ff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+    }
+
+    button {
+      padding: 14px 24px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .solo { background: #2ecc71; color: #000; }
+    .multi { background: #00ffff; color: #000; }
+    .config { background: #5f5f5f; color: #fff; }
+
+    #chat {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      display: none;
+    }
+
+    #messages {
+      max-height: 150px;
+      overflow-y: auto;
+      padding: 5px;
+      font-size: 14px;
+    }
+
+    #chat input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px;
+      border: none;
+      outline: none;
+    }
+
+    #admin-btn {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      font-size: 22px;
+      display: none;
+    }
+  </style>
 </head>
+
 <body>
 
-  <!-- MENU -->
   <div id="menu">
-    <h1>🐱 Rikcat Adventures</h1>
-    <button id="btnPlay">Jogar</button>
-    <button id="btnConfig">⚙️ Configurações</button>
+    <button class="solo" onclick="startSolo()">Solo</button>
+    <button class="multi" onclick="startMulti()">Multiplayer</button>
+    <button class="config" onclick="openConfig()">Configurações</button>
   </div>
 
-  <!-- CONFIGURAÇÕES -->
-  <div id="config" class="hidden">
-    <h2>Configurações</h2>
-    <button id="btnADM">Código para ADMs 🎮</button>
-    <button id="btnBack">Voltar</button>
+  <canvas id="game" width="800" height="450"></canvas>
+
+  <div id="chat">
+    <div id="messages"></div>
+    <input id="chatInput" placeholder="Digite sua mensagem..." />
   </div>
 
-  <!-- JOGO -->
-  <canvas id="gameCanvas" width="360" height="640"></canvas>
+  <button id="admin-btn">🔥</button>
 
-  <!-- BOTÕES MOBILE -->
-  <div id="controls" class="hidden">
-    <button id="btnLeft">⬅️</button>
-    <button id="btnJump">🚀</button>
-    <button id="btnRight">➡️</button>
-    <button id="btnFire" class="hidden">🔥</button>
-  </div>
-
-  <!-- SCRIPTS -->
-  <script type="module" src="config.js"></script>
-  <script type="module" src="firebase.js"></script>
-  <script type="module" src="rikcat.js"></script>
-  <script type="module" src="player.js"></script>
-  <script type="module" src="ui.js"></script>
-  <script type="module" src="admin.js"></script>
-  <script type="module" src="game.js"></script>
-
+  <script type="module" src="./game.js"></script>
 </body>
 </html>
