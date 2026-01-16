@@ -1,69 +1,46 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
-    <title>Rikcat Adventures — Cuphead Boss Edition</title>
-    <style>
-        body { margin:0; overflow:hidden; background:#2f86c9; font-family:sans-serif; }
-        #titleScreen, #playMenu, #othersMenu, #configScreen { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; z-index:50; color:white; }
-        #playMenu, #othersMenu, #configScreen { display:none; }
-        button { font-size:18px; padding:10px 20px; border-radius:10px; border:none; cursor:pointer; }
-        .green { background:#2ecc71; color:white; }
-        .cyan { background:#1abc9c; color:white; }
-        .gray { background:#5f5f5f; color:white; }
-        canvas { display:block; width:100%; height:100vh; }
-        .btn { position:fixed; width:70px; height:70px; background:rgba(255,255,255,0.35); border-radius:50%; display:flex; align-items:center; justify-content:center; user-select:none; z-index:20; }
-        #left{left:20px;bottom:20px;} #right{left:100px;bottom:20px;} #jump{right:20px;bottom:20px;}
-        #openChatBtn{position:fixed;left:15px;top:15px;width:50px;height:50px;border-radius:50%;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,0.4);z-index:40;}
-        #chatContainer{position:fixed;left:15px;top:80px;width:280px;height:220px;display:none;flex-direction:column;background:rgba(0,0,0,0.7);border-radius:8px;z-index:40;overflow:hidden;}
-        #chatBox{flex:1;overflow-y:auto;padding:8px;color:white;font-size:13px;} #chatInput{border:none;padding:8px;outline:none;}
-    </style>
+  <meta charset="UTF-8" />
+  <title>Rikcat Adventures</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="titleScreen">
-        <h1>🐱 Rikcat Adventures</h1>
-        <div style="display:flex;gap:10px;">
-            <button id="playBtn" style="background:#ffd54f;color:#000;">JOGAR</button>
-            <button id="configBtn">⚙️ Configurações</button>
-        </div>
-    </div>
 
-    <div id="playMenu">
-        <h2>Jogar</h2>
-        <button id="soloBtn" class="green">Solo</button>
-        <button id="multiBtn" class="cyan">Multiplayer</button>
-        <button id="othersBtn" class="gray">Outros</button>
-        <button id="backFromPlay">Voltar</button>
-    </div>
+  <!-- MENU -->
+  <div id="menu">
+    <h1>🐱 Rikcat Adventures</h1>
+    <button id="btnPlay">Jogar</button>
+    <button id="btnConfig">⚙️ Configurações</button>
+  </div>
 
-    <div id="othersMenu">
-        <h2>Outros</h2>
-        <button id="cupheadBtn" style="background:#222;color:#fff;">Cuphead Boss</button>
-        <button id="backFromOthers">Voltar</button>
-    </div>
+  <!-- CONFIGURAÇÕES -->
+  <div id="config" class="hidden">
+    <h2>Configurações</h2>
+    <button id="btnADM">Código para ADMs 🎮</button>
+    <button id="btnBack">Voltar</button>
+  </div>
 
-    <div id="configScreen">
-        <div style="background:#4a90e2;padding:20px;border-radius:12px;display:flex;flex-direction:column;gap:8px;">
-            <h3>Configurações</h3>
-            <input id="nickInput" placeholder="Nick" maxlength="15" />
-            <select id="skinSelect">
-                <option value="rikcat">Rikcat</option>
-                <option value="polvo">Polvo</option>
-            </select>
-            <input type="color" id="colorSelect" value="#FFB000" />
-            <button id="saveConfig" class="green">Salvar</button>
-            <button id="cancelConfig">Cancelar</button>
-        </div>
-    </div>
+  <!-- JOGO -->
+  <canvas id="gameCanvas" width="360" height="640"></canvas>
 
-    <div id="game" style="display:none;">
-        <canvas id="canvas"></canvas>
-        <div id="left" class="btn">⬅️</div>
-        <div id="right" class="btn">➡️</div>
-        <div id="jump" class="btn">🚀</div>
-    </div>
+  <!-- BOTÕES MOBILE -->
+  <div id="controls" class="hidden">
+    <button id="btnLeft">⬅️</button>
+    <button id="btnJump">🚀</button>
+    <button id="btnRight">➡️</button>
+    <button id="btnFire" class="hidden">🔥</button>
+  </div>
 
-    <script type="module" src="./game.js"></script>
+  <!-- SCRIPTS -->
+  <script type="module" src="config.js"></script>
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="rikcat.js"></script>
+  <script type="module" src="player.js"></script>
+  <script type="module" src="ui.js"></script>
+  <script type="module" src="admin.js"></script>
+  <script type="module" src="game.js"></script>
+
 </body>
 </html>
