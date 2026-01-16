@@ -9,12 +9,17 @@ import {
 } from "./firebase.js";
 
 import { pedirSenhaADM, admLigado } from "./admin.js";
+import { drawRikcat } from "./rikcat.js";
 
 console.log("GAME.JS CARREGOU");
 
 // Canvas
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+
+// Ajuste de tamanho
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
 // Estado
 let modo = null;
@@ -75,11 +80,10 @@ function conectarMultiplayer() {
   onDisconnect(playerRef).remove();
 
   onValue(ref(db, "players"), snap => {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     snap.forEach(p => {
       const data = p.val();
-      ctx.fillStyle = "orange";
-      ctx.fillRect(data.x, data.y, 40, 40);
+      drawRikcat(ctx, data.x, data.y);
     });
   });
 
@@ -88,14 +92,13 @@ function conectarMultiplayer() {
   }, 100);
 }
 
-// Loop
+// Loop principal
 function update() {
   if (keys["ArrowRight"]) player.x += 4;
   if (keys["ArrowLeft"]) player.x -= 4;
 
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = "orange";
-  ctx.fillRect(player.x, player.y, 40, 40);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawRikcat(ctx, player.x, player.y);
 
   requestAnimationFrame(update);
 }
