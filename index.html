@@ -1,105 +1,150 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>😺Rikcat Adventures😺(FO1, Testes)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Rikcat Adventures (FO1)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-  <style>
-    body {
-      margin: 0;
-      background: #1e90ff;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-    }
+<style>
+body{
+  margin:0;
+  overflow:hidden;
+  background:#1e90ff;
+  font-family:Arial,sans-serif;
+}
 
-    canvas {
-      background: #87ceeb;
-      display: block;
-    }
+canvas{
+  display:block;
+  background:#87ceeb;
+}
 
-    #menu {
-      position: fixed;
-      inset: 0;
-      background: #1e90ff;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 15px;
-      z-index: 20;
-    }
+/* MENU */
+#menu{
+  position:fixed;
+  inset:0;
+  background:#1e90ff;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:15px;
+  z-index:10;
+}
 
-    button {
-      padding: 14px 24px;
-      font-size: 18px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-    }
+button{
+  padding:14px 26px;
+  font-size:18px;
+  border:none;
+  border-radius:12px;
+}
 
-    .solo { background: #2ecc71; color: #000; }
-    .multi { background: #00ffff; color: #000; }
-    .config { background: #5f5f5f; color: #fff; }
+.solo{background:#2ecc71;}
+.multi{background:#00ffff;}
+.config{background:#5f5f5f;color:#fff;}
 
-    #chat {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: rgba(0,0,0,0.6);
-      color: white;
-      display: none;
-      z-index: 25;
-    }
+/* CONFIG */
+#configScreen{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.85);
+  display:none;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  z-index:20;
+  color:white;
+}
 
-    #messages {
-      max-height: 150px;
-      overflow-y: auto;
-      padding: 5px;
-      font-size: 14px;
-    }
+.config-box{
+  background:#4a90e2;
+  padding:20px;
+  border-radius:14px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  width:260px;
+}
 
-    #chat input {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 10px;
-      border: none;
-      outline: none;
-    }
+/* CONTROLES MOBILE */
+.btn{
+  position:fixed;
+  width:70px;
+  height:70px;
+  border-radius:50%;
+  background:rgba(255,255,255,.35);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:30px;
+  user-select:none;
+}
 
-    #admin-btn {
-      position: fixed;
-      bottom: 80px;
-      right: 20px;
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      font-size: 22px;
-      display: none;
-      z-index: 30;
-    }
-  </style>
+#left{bottom:20px;left:20px;}
+#right{bottom:20px;left:110px;}
+#jump{bottom:20px;right:20px;}
+
+/* CHAT */
+#chat{
+  position:fixed;
+  bottom:0;
+  left:0;
+  width:100%;
+  background:rgba(0,0,0,.6);
+  display:none;
+  color:white;
+}
+#messages{
+  max-height:120px;
+  overflow-y:auto;
+  padding:6px;
+}
+#chat input{
+  width:100%;
+  padding:10px;
+  border:none;
+}
+</style>
 </head>
 
 <body>
 
-  <div id="menu">
-    <button class="solo" onclick="startSolo()">Solo</button>
-    <button class="multi" onclick="startMulti()">Multiplayer</button>
-    <button class="config" onclick="openConfig()">Configurações</button>
+<div id="menu">
+  <button class="solo" onclick="startSolo()">Solo</button>
+  <button class="multi" onclick="startMulti()">Multiplayer</button>
+  <button class="config" onclick="openConfig()">Configurações</button>
+</div>
+
+<div id="configScreen">
+  <div class="config-box">
+    <label>Nick</label>
+    <input id="nickInput" placeholder="Seu nick">
+
+    <label>Skin</label>
+    <select id="skinSelect">
+      <option value="rikcat">Rikcat</option>
+      <option value="polvo">Polvo</option>
+    </select>
+
+    <label>Cor do Rikcat</label>
+    <input type="color" id="colorSelect" value="#FFB000">
+
+    <button onclick="saveConfig()">Salvar</button>
+    <button onclick="openAdmin()">Código para ADMs 🎮</button>
   </div>
+</div>
 
-  <!-- canvas — não precisa definir width/height aqui, game.js faz resize -->
-  <canvas id="game"></canvas>
+<canvas id="game"></canvas>
 
-  <div id="chat">
-    <div id="messages"></div>
-    <input id="chatInput" placeholder="Digite sua mensagem..." />
-  </div>
+<!-- CONTROLES -->
+<div id="left" class="btn">⬅️</div>
+<div id="right" class="btn">➡️</div>
+<div id="jump" class="btn">🚀</div>
 
-  <button id="admin-btn">🔥</button>
+<div id="chat">
+  <div id="messages"></div>
+  <input id="chatInput" placeholder="Mensagem...">
+</div>
 
-  <script type="module" src="./game.js"></script>
+<script type="module" src="./game.js"></script>
 </body>
 </html>
