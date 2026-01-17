@@ -109,9 +109,9 @@ button{
 <body>
 
 <div id="menu">
-  <button class="solo" onclick="startSolo()">Solo</button>
-  <button class="multi" onclick="startMulti()">Multiplayer</button>
-  <button class="config" onclick="openConfig()">Configurações</button>
+  <button class="solo" id="soloBtn">Solo</button>
+  <button class="multi" id="multiBtn">Multiplayer</button>
+  <button class="config" id="configBtn">Configurações</button>
 </div>
 
 <div id="configScreen">
@@ -129,7 +129,7 @@ button{
     <input type="color" id="colorSelect" value="#FFB000">
 
     <button onclick="saveConfig()">Salvar</button>
-    <button onclick="openAdmin()">Código para ADMs 🎮</button>
+    <button onclick="alert('ADM em breve')">Código para ADMs 🎮</button>
   </div>
 </div>
 
@@ -146,5 +146,6 @@ button{
 </div>
 
 <script type="module" src="./game.js"></script>
+
 </body>
 </html>
