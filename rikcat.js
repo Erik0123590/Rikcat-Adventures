@@ -1,55 +1,75 @@
-// Rikcat.js
-export function drawRikcat(ctx, player) {
-  const x = player.x;
-  const y = player.y;
-  const color = player.color || "#FFB000";
+// rikcat.js — desenho do Rikcat (FO1 estilo)
+export function drawRikcat(ctx, p) {
+  // p: { x, y, w, h, color, nick }
+  const x = Math.round(p.x);
+  const y = Math.round(p.y);
+  const color = p.color || "#FFB000";
+  ctx.save();
 
-  // Corpo
+  // center for drawing (use top-left x,y as sprite origin)
+  const cx = x + 20;
+  const cy = y + 20;
+
+  ctx.translate(cx, cy);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#000";
+
+  // Ears (left)
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.arc(x + 20, y + 20, 20, 0, Math.PI * 2);
+  ctx.moveTo(-8, -18); ctx.lineTo(-26, -40); ctx.lineTo(-2, -28); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+
+  // inner left ear
+  ctx.fillStyle = "#FF5FA2";
+  ctx.beginPath();
+  ctx.moveTo(-10, -22); ctx.lineTo(-20, -34); ctx.lineTo(-6, -28); ctx.closePath();
   ctx.fill();
 
-  // Orelhas
+  // Ears (right)
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.moveTo(x + 5, y);
-  ctx.lineTo(x - 5, y - 20);
-  ctx.lineTo(x + 15, y);
+  ctx.moveTo(8, -18); ctx.lineTo(26, -40); ctx.lineTo(2, -28); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+
+  // inner right ear
+  ctx.fillStyle = "#FF5FA2";
+  ctx.beginPath();
+  ctx.moveTo(10, -22); ctx.lineTo(20, -34); ctx.lineTo(6, -28); ctx.closePath();
   ctx.fill();
 
+  // Body
+  ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.moveTo(x + 35, y);
-  ctx.lineTo(x + 45, y - 20);
-  ctx.lineTo(x + 25, y);
+  ctx.arc(0, 0, 18, 0, Math.PI * 2);
+  ctx.fill(); ctx.stroke();
+
+  // Eyes
+  ctx.fillStyle = "#000";
+  ctx.beginPath();
+  ctx.arc(-6, -4, 2.5, 0, Math.PI * 2);
+  ctx.arc(6, -4, 2.5, 0, Math.PI * 2);
   ctx.fill();
 
-  // Dentro das orelhas
-  ctx.fillStyle = "pink";
+  // Nose (triangle)
+  ctx.fillStyle = "#FF5FA2";
   ctx.beginPath();
-  ctx.moveTo(x + 8, y);
-  ctx.lineTo(x + 2, y - 12);
-  ctx.lineTo(x + 14, y);
+  ctx.moveTo(0, 0); ctx.lineTo(-3, 5); ctx.lineTo(3, 5); ctx.closePath();
   ctx.fill();
 
+  // Mouth
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 1.4;
   ctx.beginPath();
-  ctx.moveTo(x + 32, y);
-  ctx.lineTo(x + 38, y - 12);
-  ctx.lineTo(x + 26, y);
-  ctx.fill();
+  ctx.moveTo(-4, 9); ctx.quadraticCurveTo(0, 12, 4, 9);
+  ctx.stroke();
 
-  // Olhos
-  ctx.fillStyle = "black";
-  ctx.beginPath();
-  ctx.arc(x + 14, y + 20, 3, 0, Math.PI * 2);
-  ctx.arc(x + 26, y + 20, 3, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Nariz
-  ctx.fillStyle = "pink";
-  ctx.beginPath();
-  ctx.moveTo(x + 20, y + 24);
-  ctx.lineTo(x + 17, y + 28);
-  ctx.lineTo(x + 23, y + 28);
-  ctx.fill();
+  // Nick (draw after restore for readability)
+  ctx.restore();
+  ctx.fillStyle = "white";
+  ctx.font = "bold 12px Arial";
+  ctx.textAlign = "center";
+  ctx.strokeStyle = "black"; ctx.lineWidth = 3;
+  ctx.strokeText(p.nick || "Player", cx, y - 10);
+  ctx.fillText(p.nick || "Player", cx, y - 10);
 }
