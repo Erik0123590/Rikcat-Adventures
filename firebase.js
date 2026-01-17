@@ -1,5 +1,4 @@
 // firebase.js — Rikcat Online 2D (Base Estável)
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import {
   getDatabase,
@@ -23,12 +22,4 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-export {
-  db,
-  ref,
-  set,
-  push,
-  onValue,
-  remove,
-  onDisconnect
-};
+export { db, ref, set, push, onValue, remove, onDisconnect };
