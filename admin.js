@@ -1,19 +1,17 @@
-// admin.js — FO1
-
+// admin.js — gerenciamento simples de senha ADM
 let admAtivo = false;
 const SENHA_ADM = "RikcatADM!2025";
 
-export function pedirSenhaADM() {
-  const senha = prompt("Coloque a senha de ADM:");
-  if (senha === SENHA_ADM) {
+export function pedirSenhaADM(){
+  const s = prompt("Coloque a senha de ADM:");
+  if(s === SENHA_ADM){
     admAtivo = true;
     alert("Comandos de ADM ligados");
-    document.getElementById("admin-btn").style.display = "block";
+    const b = document.getElementById("adminBtn");
+    if(b) b.style.display = "block";
   } else {
     alert("Senha incorreta");
   }
 }
 
-export function admLigado() {
-  return admAtivo;
-}
+export function admLigado(){ return admAtivo; }
