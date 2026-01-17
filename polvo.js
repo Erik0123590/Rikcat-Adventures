@@ -1,24 +1,28 @@
-export function drawPolvo(ctx, player) {
-  const x = player.x;
-  const y = player.y;
-  const color = player.color || "#b84cff";
+// polvo.js — desenho simples do polvo (non-pixel)
+export function drawPolvo(ctx, p) {
+  const x = Math.round(p.x);
+  const y = Math.round(p.y);
+  const color = p.color || "#B84CFF";
 
-  // Cabeça
+  ctx.save();
+  const cx = x + 20;
+  const cy = y + 20;
+  ctx.translate(cx, cy);
+
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.arc(x + 20, y + 20, 18, 0, Math.PI * 2);
+  ctx.ellipse(0, -6, 20, 22, 0, 0, Math.PI * 2);
   ctx.fill();
+  ctx.strokeStyle = "#000"; ctx.lineWidth = 2; ctx.stroke();
 
-  // Olhos
+  // eyes
+  ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(-7, -12, 5, 0, Math.PI*2); ctx.arc(7, -12, 5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = "#000"; ctx.beginPath(); ctx.arc(-7, -12, 2, 0, Math.PI*2); ctx.arc(7, -12, 2, 0, Math.PI*2); ctx.fill();
+
+  ctx.restore();
+
   ctx.fillStyle = "white";
-  ctx.beginPath();
-  ctx.arc(x + 14, y + 18, 5, 0, Math.PI * 2);
-  ctx.arc(x + 26, y + 18, 5, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = "black";
-  ctx.beginPath();
-  ctx.arc(x + 14, y + 18, 2, 0, Math.PI * 2);
-  ctx.arc(x + 26, y + 18, 2, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.font = "bold 12px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText(p.nick || "Player", cx, y - 10);
 }
