@@ -1,6 +1,5 @@
-// game.js — FO3 UNIFICADO
-
-import { db, ref, set, push, onValue, onDisconnect, update } from "./firebase.js";
+/* ================= IMPORTS ================= */
+import { db, ref, push, set, update, onValue, onDisconnect } from "./firebase.js";
 import { drawRikcat } from "./rikcat.js";
 import { drawPolvo } from "./polvo.js";
 
@@ -18,7 +17,7 @@ addEventListener("resize", resize);
 /* ================= ESTADO ================= */
 let estado = "menu"; // menu | solo | multi
 
-/* ================= PLAYER ================= */
+/* ================= PLAYER LOCAL ================= */
 const player = {
   id: null,
   x: 100,
@@ -43,16 +42,16 @@ const keys = {};
 addEventListener("keydown", e => keys[e.key] = true);
 addEventListener("keyup", e => keys[e.key] = false);
 
-/* ================= MOBILE ================= */
+/* MOBILE */
 function bindTouch(id, key){
   const el = document.getElementById(id);
   if(!el) return;
   el.addEventListener("touchstart", e=>{
-    e.preventDefault(); keys[key]=true;
-  }, {passive:false});
+    e.preventDefault(); keys[key] = true;
+  });
   el.addEventListener("touchend", e=>{
-    e.preventDefault(); keys[key]=false;
-  }, {passive:false});
+    e.preventDefault(); keys[key] = false;
+  });
 }
 bindTouch("left","ArrowLeft");
 bindTouch("right","ArrowRight");
@@ -66,29 +65,15 @@ const configBtn = document.getElementById("configBtn");
 
 const configScreen = document.getElementById("configScreen");
 const saveConfig = document.getElementById("saveConfig");
-const nickInput = document.getElementById("nickInput");
-const skinSelect = document.getElementById("skinSelect");
-const colorSelect = document.getElementById("colorSelect");
 
-/* ================= CONFIG ================= */
-configBtn.onclick = ()=>{
-  configScreen.style.display = "flex";
-};
-
+/* CONFIG */
 saveConfig.onclick = ()=>{
-  player.nick = nickInput.value || player.nick;
-  player.skin = skinSelect.value;
-  player.color = colorSelect.value;
+  player.nick  = document.getElementById("nickInput").value || player.nick;
+  player.skin  = document.getElementById("skinSelect").value;
+  player.color = document.getElementById("colorInput").value;
   configScreen.style.display = "none";
-
-  if(estado === "multi" && playerRef){
-    update(playerRef,{
-      nick: player.nick,
-      skin: player.skin,
-      color: player.color
-    });
-  }
 };
+configBtn.onclick = ()=> configScreen.style.display = "flex";
 
 /* ================= CHAT ================= */
 const openChatBtn = document.getElementById("openChatBtn");
@@ -96,49 +81,56 @@ const chatBar = document.getElementById("chatBar");
 const messages = document.getElementById("messages");
 const chatInput = document.getElementById("chatInput");
 
-const chatRef = ref(db,"rooms/fo3/chat");
 let chatAberto = false;
+openChatBtn.style.display = "none";
+chatBar.style.display = "none";
 
-onValue(chatRef, snap=>{
-  messages.innerHTML="";
-  Object.values(snap.val()||{}).slice(-40).forEach(m=>{
-    const d=document.createElement("div");
-    d.innerHTML=`<b>${m.sender}:</b> ${m.text}`;
-    messages.appendChild(d);
-  });
-  messages.scrollTop = messages.scrollHeight;
-});
+const chatRef = ref(db, "rooms/fo3/chat");
 
 openChatBtn.onclick = ()=>{
   chatAberto = !chatAberto;
   chatBar.style.display = chatAberto ? "block" : "none";
-  if(chatAberto) chatInput.focus();
+  chatInput.focus();
 };
 
 chatInput.onkeydown = e=>{
-  if(e.key==="Enter" && chatInput.value.trim()){
+  if(e.key === "Enter" && chatInput.value.trim()){
     push(chatRef,{
       sender: player.nick,
       text: chatInput.value,
       time: Date.now()
     });
-    chatInput.value="";
+    chatInput.value = "";
   }
 };
 
+onValue(chatRef, snap=>{
+  messages.innerHTML = "";
+  Object.values(snap.val() || {}).slice(-40).forEach(m=>{
+    const d = document.createElement("div");
+    d.innerHTML = `<b>${m.sender}:</b> ${m.text}`;
+    messages.appendChild(d);
+  });
+  messages.scrollTop = messages.scrollHeight;
+});
+
+/* ================= CHÃO ================= */
+function groundY(){
+  return canvas.height - 80;
+}
+
 /* ================= MULTIPLAYER ================= */
+let playersRef = null;
 let playerRef = null;
-let playersDBRef = null;
 let outros = {};
-let sendInterval = null;
 
-function conectarMultiplayer(){
+function startMultiplayer(){
   estado = "multi";
-  menu.style.display="none";
-  openChatBtn.style.display="flex";
+  menu.style.display = "none";
+  openChatBtn.style.display = "flex";
 
-  playersDBRef = ref(db,"rooms/fo3/players");
-  playerRef = push(playersDBRef);
+  playersRef = ref(db, "rooms/fo3/players");
+  playerRef = push(playersRef);
   player.id = playerRef.key;
 
   set(playerRef,{
@@ -152,9 +144,9 @@ function conectarMultiplayer(){
 
   onDisconnect(playerRef).remove();
 
-  onValue(playersDBRef, snap=>{
-    outros = {};
+  onValue(playersRef, snap=>{
     const data = snap.val() || {};
+    outros = {};
     for(const id in data){
       if(id !== player.id){
         outros[id] = data[id];
@@ -162,10 +154,15 @@ function conectarMultiplayer(){
     }
   });
 
-  if(sendInterval) clearInterval(sendInterval);
-  sendInterval = setInterval(()=>{
+  setInterval(()=>{
     if(playerRef){
-      update(playerRef,{ x: player.x, y: player.y });
+      update(playerRef,{
+        x: player.x,
+        y: player.y,
+        skin: player.skin,
+        color: player.color,
+        nick: player.nick
+      });
     }
   },100);
 }
@@ -173,25 +170,20 @@ function conectarMultiplayer(){
 /* ================= SOLO ================= */
 function startSolo(){
   estado = "solo";
-  menu.style.display="none";
-  openChatBtn.style.display="flex";
+  menu.style.display = "none";
+  openChatBtn.style.display = "flex";
 }
 
-/* ================= BOTÕES ================= */
+/* BOTÕES */
 soloBtn.onclick = startSolo;
-multiBtn.onclick = conectarMultiplayer;
-
-/* ================= FÍSICA ================= */
-function groundY(){
-  return canvas.height - 80;
-}
+multiBtn.onclick = startMultiplayer;
 
 /* ================= LOOP ================= */
-function loop(){
+function updateGame(){
   if(estado !== "menu"){
     if(keys["ArrowLeft"]) player.vx = -SPEED;
     else if(keys["ArrowRight"]) player.vx = SPEED;
-    else player.vx *= 0.85;
+    else player.vx *= 0.8;
 
     if((keys[" "] || keys["ArrowUp"]) && player.onGround){
       player.vy = JUMP;
@@ -208,25 +200,30 @@ function loop(){
       player.vy = 0;
       player.onGround = true;
     }
+
+    if(player.x < 0) player.x = 0;
+    if(player.x > canvas.width - player.w)
+      player.x = canvas.width - player.w;
   }
 
   /* DRAW */
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle="#87CEEB";
+  ctx.fillStyle = "#87CEEB";
   ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle="#654321";
-  ctx.fillRect(0,groundY(),canvas.width,80);
+
+  ctx.fillStyle = "#654321";
+  ctx.fillRect(0, groundY(), canvas.width, 80);
 
   for(const id in outros){
     const p = outros[id];
-    if(p.skin==="polvo") drawPolvo(ctx,p);
-    else drawRikcat(ctx,p);
+    if(p.skin === "polvo") drawPolvo(ctx, p);
+    else drawRikcat(ctx, p);
   }
 
-  if(player.skin==="polvo") drawPolvo(ctx,player);
-  else drawRikcat(ctx,player);
+  if(player.skin === "polvo") drawPolvo(ctx, player);
+  else drawRikcat(ctx, player);
 
-  requestAnimationFrame(loop);
+  requestAnimationFrame(updateGame);
 }
 
-loop();
+updateGame();
