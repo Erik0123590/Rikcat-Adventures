@@ -1,4 +1,3 @@
-// game.js
 import { db, ref, push, onValue } from "./firebase.js";
 import { drawRikcat } from "./rikcat.js";
 import { drawPolvo } from "./polvo.js";
@@ -12,6 +11,9 @@ function resize(){
 }
 resize();
 addEventListener("resize", resize);
+
+/* ESTADO */
+let estado = "menu";
 
 /* PLAYER */
 const player = {
@@ -41,6 +43,24 @@ bindTouch("left","ArrowLeft");
 bindTouch("right","ArrowRight");
 bindTouch("jump"," ");
 
+/* UI */
+const menu = document.getElementById("menu");
+const soloBtn = document.getElementById("soloBtn");
+const multiBtn = document.getElementById("multiBtn");
+const configBtn = document.getElementById("configBtn");
+const configScreen = document.getElementById("configScreen");
+const saveConfig = document.getElementById("saveConfig");
+
+/* CONFIG */
+saveConfig.onclick = ()=>{
+  player.nick = document.getElementById("nickInput").value || player.nick;
+  player.skin = document.getElementById("skinSelect").value;
+  player.color = document.getElementById("colorInput").value;
+  configScreen.style.display = "none";
+};
+
+configBtn.onclick = ()=> configScreen.style.display = "flex";
+
 /* CHAT */
 const openChatBtn = document.getElementById("openChatBtn");
 const chatBar = document.getElementById("chatBar");
@@ -52,11 +72,10 @@ let chatAberto = false;
 
 onValue(chatRef, snap=>{
   messages.innerHTML = "";
-  const data = snap.val() || {};
-  Object.values(data).slice(-40).forEach(m=>{
-    const div = document.createElement("div");
-    div.innerHTML = `<b>${m.sender}:</b> ${m.text}`;
-    messages.appendChild(div);
+  Object.values(snap.val()||{}).slice(-40).forEach(m=>{
+    const d = document.createElement("div");
+    d.innerHTML = `<b>${m.sender}:</b> ${m.text}`;
+    messages.appendChild(d);
   });
   messages.scrollTop = messages.scrollHeight;
 });
@@ -64,60 +83,58 @@ onValue(chatRef, snap=>{
 openChatBtn.onclick = ()=>{
   chatAberto = !chatAberto;
   chatBar.style.display = chatAberto ? "block" : "none";
-  if(chatAberto) chatInput.focus();
 };
 
-chatInput.addEventListener("keydown", e=>{
-  if(e.key === "Enter" && chatInput.value.trim()){
-    push(chatRef,{
-      sender: player.nick,
-      text: chatInput.value.trim(),
-      time: Date.now()
-    });
-    chatInput.value = "";
+chatInput.onkeydown = e=>{
+  if(e.key==="Enter" && chatInput.value.trim()){
+    push(chatRef,{ sender:player.nick, text:chatInput.value, time:Date.now() });
+    chatInput.value="";
   }
-});
+};
 
-addEventListener("keydown", e=>{
-  if(e.key === "Escape"){
-    chatAberto = false;
-    chatBar.style.display = "none";
-  }
-});
-
-/* JOGO */
-function groundY(){
-  return canvas.height - 80;
+/* INICIAR JOGO */
+function iniciarJogo(){
+  estado="jogo";
+  menu.style.display="none";
+  openChatBtn.style.display="flex";
 }
 
+soloBtn.onclick = iniciarJogo;
+multiBtn.onclick = iniciarJogo;
+
+/* JOGO */
+function groundY(){ return canvas.height - 80; }
+
 function update(){
-  if(keys["ArrowLeft"]) player.vx = -SPEED;
-  else if(keys["ArrowRight"]) player.vx = SPEED;
-  else player.vx *= 0.85;
+  if(estado==="jogo"){
+    if(keys["ArrowLeft"]) player.vx=-SPEED;
+    else if(keys["ArrowRight"]) player.vx=SPEED;
+    else player.vx*=0.85;
 
-  if((keys[" "] || keys["ArrowUp"]) && player.onGround){
-    player.vy = JUMP;
-    player.onGround = false;
-  }
+    if((keys[" "]||keys["ArrowUp"]) && player.onGround){
+      player.vy=JUMP; player.onGround=false;
+    }
 
-  player.vy += GRAVITY;
-  player.x += player.vx;
-  player.y += player.vy;
+    player.vy+=GRAVITY;
+    player.x+=player.vx;
+    player.y+=player.vy;
 
-  const g = groundY();
-  if(player.y + player.h >= g){
-    player.y = g - player.h;
-    player.vy = 0;
-    player.onGround = true;
+    const g=groundY();
+    if(player.y+player.h>=g){
+      player.y=g-player.h;
+      player.vy=0;
+      player.onGround=true;
+    }
   }
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = "#87CEEB";
+  ctx.fillStyle="#87CEEB";
   ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = "#654321";
-  ctx.fillRect(0,g,canvas.width,80);
+  ctx.fillStyle="#654321";
+  ctx.fillRect(0,groundY(),canvas.width,80);
 
-  drawRikcat(ctx, player);
+  if(player.skin==="polvo") drawPolvo(ctx,player);
+  else drawRikcat(ctx,player);
 
   requestAnimationFrame(update);
 }
