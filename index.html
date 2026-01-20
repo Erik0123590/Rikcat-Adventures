@@ -15,7 +15,6 @@ body{
 
 canvas{
   display:block;
-  background:#87ceeb;
   width:100%;
   height:100vh;
 }
@@ -136,7 +135,6 @@ button{
 
 <body>
 
-<!-- MENU -->
 <div id="menu">
   <h1 style="color:white;">🐱 Rikcat Adventures</h1>
   <button id="soloBtn" class="solo">Solo</button>
@@ -144,23 +142,16 @@ button{
   <button id="configBtn" class="config">Configurações</button>
 </div>
 
-<!-- CONFIG -->
 <div id="configScreen">
   <div class="config-box">
     <label>Nick</label>
     <input id="nickInput" maxlength="16">
 
-    <label>Skin</label>
-    <select id="skinSelect">
-      <option value="rikcat">Rikcat</option>
-      <option value="polvo">Polvo</option>
-    </select>
-
     <label>Cor do Corpo</label>
-<input id="bodyColorInput" type="color" value="#ffffff">
+    <input id="bodyColorInput" type="color" value="#ffffff">
 
-<label>Cor do Nariz</label>
-<input id="faceColorInput" type="color" value="#ff00ff">
+    <label>Cor das Orelhas</label>
+    <input id="earsColorInput" type="color" value="#ff9fd4">
 
     <button id="saveConfig">Salvar</button>
   </div>
@@ -168,12 +159,10 @@ button{
 
 <canvas id="canvas"></canvas>
 
-<!-- CONTROLES -->
 <div id="left" class="btn">⬅️</div>
 <div id="right" class="btn">➡️</div>
 <div id="jump" class="btn">🚀</div>
 
-<!-- CHAT -->
 <div id="openChatBtn">💬</div>
 <div id="chatBar">
   <div id="messages"></div>
