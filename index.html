@@ -86,7 +86,7 @@ button{
 #right{ left:100px; bottom:18px; }
 #jump{ right:18px; bottom:18px; }
 
-/* CHAT ROBLOX */
+/* CHAT */
 #openChatBtn{
   position:fixed;
   left:18px;
@@ -115,7 +115,6 @@ button{
   border-radius:14px;
   display:none;
   z-index:45;
-  overflow:hidden;
 }
 
 #messages{
@@ -147,23 +146,25 @@ button{
 </div>
 
 <!-- CONFIG -->
-<div class="config-box">
-  <label>Nick</label>
-  <input id="nickInput" maxlength="16">
+<div id="configScreen">
+  <div class="config-box">
+    <label>Nick</label>
+    <input id="nickInput" maxlength="16">
 
-  <label>Skin</label>
-  <select id="skinSelect">
-    <option value="rikcat">Rikcat</option>
-    <option value="polvo">Polvo</option>
-  </select>
+    <label>Skin</label>
+    <select id="skinSelect">
+      <option value="rikcat">Rikcat</option>
+      <option value="polvo">Polvo</option>
+    </select>
 
-  <label>Cor do Corpo</label>
-  <input id="bodyColorInput" type="color" value="#ffffff">
+    <label>Cor do Corpo</label>
+    <input id="bodyColorInput" type="color" value="#ffffff">
 
-  <label>Cor do Nariz</label>
-  <input id="faceColorInput" type="color" value="#ff9fd4">
+    <label>Cor do Nariz</label>
+    <input id="faceColorInput" type="color" value="#ff9fd4">
 
-  <button id="saveConfig">Salvar</button>
+    <button id="saveConfig">Salvar</button>
+  </div>
 </div>
 
 <canvas id="canvas"></canvas>
