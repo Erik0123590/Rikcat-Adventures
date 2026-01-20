@@ -21,7 +21,8 @@ const player = {
   x:100, y:0, w:40, h:40,
   vx:0, vy:0, onGround:false,
   skin:"rikcat",
-  color:"#FFB000",
+  bodyColor:"#ffffff",
+  faceColor:"#ff9fd4",
   nick:"Convidado"
 };
 
@@ -39,12 +40,10 @@ addEventListener("keyup", e => keys[e.key] = false);
 function bindTouch(id, key){
   const el = document.getElementById(id);
   if(!el) return;
-
   el.addEventListener("touchstart", e=>{
     e.preventDefault();
     keys[key] = true;
   });
-
   el.addEventListener("touchend", e=>{
     e.preventDefault();
     keys[key] = false;
@@ -69,57 +68,22 @@ configBtn.onclick = ()=>{
 };
 
 saveConfig.onclick = ()=>{
-  player.nick  = document.getElementById("nickInput").value || player.nick;
-  player.skin  = document.getElementById("skinSelect").value;
-  player.color = document.getElementById("colorInput").value;
+  player.nick = document.getElementById("nickInput").value || player.nick;
+  player.skin = document.getElementById("skinSelect").value;
+  player.bodyColor = document.getElementById("bodyColorInput").value;
+  player.faceColor = document.getElementById("faceColorInput").value;
 
   configScreen.style.display = "none";
   estado = "menu";
-};
-
-/* CHAT */
-const openChatBtn = document.getElementById("openChatBtn");
-const chatBar = document.getElementById("chatBar");
-const messages = document.getElementById("messages");
-const chatInput = document.getElementById("chatInput");
-
-const chatRef = ref(db, "rooms/fo1/chat");
-let chatAberto = false;
-
-onValue(chatRef, snap=>{
-  messages.innerHTML = "";
-  Object.values(snap.val()||{}).slice(-40).forEach(m=>{
-    const d = document.createElement("div");
-    d.innerHTML = `<b>${m.sender}:</b> ${m.text}`;
-    messages.appendChild(d);
-  });
-  messages.scrollTop = messages.scrollHeight;
-});
-
-openChatBtn.onclick = ()=>{
-  chatAberto = !chatAberto;
-  chatBar.style.display = chatAberto ? "block" : "none";
-};
-
-chatInput.onkeydown = e=>{
-  if(e.key === "Enter" && chatInput.value.trim()){
-    push(chatRef,{
-      sender: player.nick,
-      text: chatInput.value,
-      time: Date.now()
-    });
-    chatInput.value = "";
-  }
 };
 
 /* INICIAR JOGO */
 function iniciarJogo(){
   estado = "jogo";
   menu.style.display = "none";
-  openChatBtn.style.display = "flex";
 }
 
-soloBtn.onclick  = iniciarJogo;
+soloBtn.onclick = iniciarJogo;
 multiBtn.onclick = iniciarJogo;
 
 /* CHÃO */
@@ -140,8 +104,8 @@ function update(){
     }
 
     player.vy += GRAVITY;
-    player.x  += player.vx;
-    player.y  += player.vy;
+    player.x += player.vx;
+    player.y += player.vy;
 
     const g = groundY();
     if(player.y + player.h >= g){
@@ -151,7 +115,6 @@ function update(){
     }
   }
 
-  /* DRAW */
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   ctx.fillStyle = "#87CEEB";
