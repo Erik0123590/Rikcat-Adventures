@@ -1,58 +1,65 @@
-/* rikcat.js */
-/* Desenha o Rikcat usando PNGs (idle / walk) com leve subida e descida */
+// rikcat.js — Rikcat com PNG + camadas + animação
 
-const rikcatImgs = {
-  idle: new Image(),
-  walk1: new Image(),
-  walk2: new Image()
-};
+const cache = {};
 
-rikcatImgs.idle.src  = "pngs/Rikcat/Rikcat-idle.png";
-rikcatImgs.walk1.src = "pngs/Rikcat/Rikcat-walk1.png";
-rikcatImgs.walk2.src = "pngs/Rikcat/Rikcat-walk2.png";
-
-/* controle interno de animação */
-let walkFrame = 0;
-let walkTimer = 0;
-
-export function drawRikcat(ctx, player){
-  const w = player.w;
-  const h = player.h;
-
-  let img = rikcatImgs.idle;
-  let offsetY = 0;
-
-  const andando = Math.abs(player.vx) > 0.5 && player.onGround;
-
-  if(andando){
-    walkTimer++;
-
-    if(walkTimer > 10){
-      walkFrame = (walkFrame + 1) % 2;
-      walkTimer = 0;
-    }
-
-    img = walkFrame === 0
-      ? rikcatImgs.walk1
-      : rikcatImgs.walk2;
-
-    /* efeito de subir e descer */
-    offsetY = Math.sin(Date.now() / 120) * 4;
-  } else {
-    walkFrame = 0;
-    walkTimer = 0;
+function load(src){
+  if(!cache[src]){
+    const img = new Image();
+    img.src = src;
+    cache[src] = img;
   }
+  return cache[src];
+}
+
+export function drawRikcat(ctx, p){
+  const estado = Math.abs(p.vx) > 0.5 ? "walk" : "idle";
+
+  // animação de andar (sobe e desce levemente)
+  let bob = 0;
+  let frame = 1;
+
+  if(estado === "walk"){
+    frame = Math.floor(Date.now() / 180) % 2 + 1; // 1 ou 2
+    bob = frame === 1 ? -2 : 0;
+  }
+
+  const baseX = Math.round(p.x);
+  const baseY = Math.round(p.y + bob);
+
+  const body = load(`pngs/Rikcat/Rikcat-body-${estado}${estado==="walk" ? frame : ""}.png`);
+  const ears = load(`pngs/Rikcat/Rikcat-ears-${estado}${estado==="walk" ? frame : ""}.png`);
+  const face = load(`pngs/Rikcat/Rikcat-face-${estado}${estado==="walk" ? frame : ""}.png`);
 
   ctx.save();
+  ctx.translate(baseX, baseY);
 
-  /* espelhamento */
-  if(player.vx < 0){
-    ctx.translate(player.x + w, player.y);
-    ctx.scale(-1, 1);
-    ctx.drawImage(img, 0, offsetY, w, h);
-  } else {
-    ctx.drawImage(img, player.x, player.y + offsetY, w, h);
-  }
+  // BODY (cor principal)
+  ctx.drawImage(body, 0, 0);
+  ctx.globalCompositeOperation = "source-atop";
+  ctx.fillStyle = p.bodyColor || "#ffffff";
+  ctx.fillRect(0,0,p.w,p.h);
+
+  ctx.globalCompositeOperation = "source-over";
+
+  // EARS (cor secundária)
+  ctx.drawImage(ears, 0, 0);
+  ctx.globalCompositeOperation = "source-atop";
+  ctx.fillStyle = p.earsColor || "#ff9fd4";
+  ctx.fillRect(0,0,p.w,p.h);
+
+  ctx.globalCompositeOperation = "source-over";
+
+  // FACE (sem cor)
+  ctx.drawImage(face, 0, 0);
 
   ctx.restore();
+
+  // Nick
+  ctx.fillStyle = "white";
+  ctx.font = "bold 12px Arial";
+  ctx.textAlign = "center";
+  ctx.strokeStyle = "black";
+  ctx.lineWidth = 3;
+  ctx.strokeText(p.nick, baseX + p.w/2, baseY - 8);
+  ctx.fillText(p.nick, baseX + p.w/2, baseY - 8);
 }
