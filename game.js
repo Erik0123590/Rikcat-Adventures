@@ -1,10 +1,11 @@
-import { db, ref, push, set, onValue, onDisconnect } from "./firebase.js";
+import { db, ref, push, onValue } from "./firebase.js";
 import { drawRikcat } from "./rikcat.js";
+import { drawPolvo } from "./polvo.js";
 
-/* CANVAS */
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
+/* RESIZE */
 function resize(){
   canvas.width = innerWidth;
   canvas.height = innerHeight;
@@ -13,25 +14,18 @@ resize();
 addEventListener("resize", resize);
 
 /* ESTADO */
-let estado = "menu";
+let estado = "menu"; // menu | jogo | config
 
 /* PLAYER */
 const player = {
-  x: 100,
-  y: 0,
-  w: 48,
-  h: 48,
-  vx: 0,
-  vy: 0,
-  onGround: false,
-  nick: "Rikcat",
-  skin: "rikcat",
-  bodyColor: "#ffffff",
-  faceColor: "#ff00ff",
-  earsColor: "#ffffff"
+  x:100, y:0, w:40, h:40,
+  vx:0, vy:0, onGround:false,
+  skin:"rikcat",
+  color:"#FFB000",
+  nick:"Convidado"
 };
 
-/* CONSTANTES */
+/* FÍSICA */
 const GRAVITY = 0.9;
 const JUMP = -16;
 const SPEED = 5;
@@ -69,29 +63,64 @@ const configScreen = document.getElementById("configScreen");
 const saveConfig = document.getElementById("saveConfig");
 
 /* CONFIG */
-configBtn.onclick = () => {
+configBtn.onclick = ()=>{
+  estado = "config";
   configScreen.style.display = "flex";
 };
 
-saveConfig.onclick = () => {
-  player.nick = document.getElementById("nickInput").value || player.nick;
-  player.skin = document.getElementById("skinSelect").value;
-  player.bodyColor = document.getElementById("bodyColorInput").value;
-  player.faceColor = document.getElementById("faceColorInput").value;
+saveConfig.onclick = ()=>{
+  player.nick  = document.getElementById("nickInput").value || player.nick;
+  player.skin  = document.getElementById("skinSelect").value;
+  player.color = document.getElementById("colorInput").value;
+
   configScreen.style.display = "none";
+  estado = "menu";
 };
 
-/* SOLO */
-soloBtn.onclick = () => {
-  estado = "solo";
-  menu.style.display = "none";
+/* CHAT */
+const openChatBtn = document.getElementById("openChatBtn");
+const chatBar = document.getElementById("chatBar");
+const messages = document.getElementById("messages");
+const chatInput = document.getElementById("chatInput");
+
+const chatRef = ref(db, "rooms/fo1/chat");
+let chatAberto = false;
+
+onValue(chatRef, snap=>{
+  messages.innerHTML = "";
+  Object.values(snap.val()||{}).slice(-40).forEach(m=>{
+    const d = document.createElement("div");
+    d.innerHTML = `<b>${m.sender}:</b> ${m.text}`;
+    messages.appendChild(d);
+  });
+  messages.scrollTop = messages.scrollHeight;
+});
+
+openChatBtn.onclick = ()=>{
+  chatAberto = !chatAberto;
+  chatBar.style.display = chatAberto ? "block" : "none";
 };
 
-/* MULTIPLAYER (base, sem desenhar outros ainda) */
-multiBtn.onclick = () => {
-  estado = "multi";
-  menu.style.display = "none";
+chatInput.onkeydown = e=>{
+  if(e.key === "Enter" && chatInput.value.trim()){
+    push(chatRef,{
+      sender: player.nick,
+      text: chatInput.value,
+      time: Date.now()
+    });
+    chatInput.value = "";
+  }
 };
+
+/* INICIAR JOGO */
+function iniciarJogo(){
+  estado = "jogo";
+  menu.style.display = "none";
+  openChatBtn.style.display = "flex";
+}
+
+soloBtn.onclick  = iniciarJogo;
+multiBtn.onclick = iniciarJogo;
 
 /* CHÃO */
 function groundY(){
@@ -100,7 +129,7 @@ function groundY(){
 
 /* LOOP */
 function update(){
-  if(estado !== "menu"){
+  if(estado === "jogo"){
     if(keys["ArrowLeft"]) player.vx = -SPEED;
     else if(keys["ArrowRight"]) player.vx = SPEED;
     else player.vx *= 0.85;
@@ -111,8 +140,8 @@ function update(){
     }
 
     player.vy += GRAVITY;
-    player.x += player.vx;
-    player.y += player.vy;
+    player.x  += player.vx;
+    player.y  += player.vy;
 
     const g = groundY();
     if(player.y + player.h >= g){
@@ -131,7 +160,8 @@ function update(){
   ctx.fillStyle = "#654321";
   ctx.fillRect(0, groundY(), canvas.width, 80);
 
-  drawRikcat(ctx, player);
+  if(player.skin === "polvo") drawPolvo(ctx, player);
+  else drawRikcat(ctx, player);
 
   requestAnimationFrame(update);
 }
